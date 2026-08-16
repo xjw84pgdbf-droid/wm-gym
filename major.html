@@ -26,6 +26,8 @@
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    max-height: 95vh;
+    overflow-y: auto;
   }
   .app-title {
     font-size: 22px;
@@ -45,20 +47,30 @@
     margin-bottom: 10px;
     cursor: pointer;
   }
+  .settings select {
+    font-size: 16px;
+    padding: 5px;
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
   .question-box {
-    font-size: 56px;
+    font-size: 48px;
     font-weight: bold;
-    margin: 20px 0 40px 0;
+    margin: 20px 0 30px 0;
     min-height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #222;
+    letter-spacing: 2px;
+    word-break: break-all;
   }
   .answer-box {
-    font-size: 20px;
+    font-size: 18px;
     color: #0056b3;
-    margin: 10px 0 30px 0;
+    margin: 10px 0 20px 0;
     min-height: 120px;
     display: flex;
     flex-direction: column;
@@ -74,24 +86,29 @@
   }
   .answer-box .ans-item {
     display: block;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 10px;
+    width: 100%;
+  }
+  .answer-box .ans-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
   }
   .answer-box .ans-main {
     font-weight: bold;
-    font-size: 22px;
+    font-size: 20px;
   }
   .answer-box .ans-jp {
     color: #555;
-  }
-  .answer-box .ans-ipa {
-    color: #777;
-    font-size: 18px;
-    margin-top: 5px;
+    font-size: 16px;
   }
   button {
     font-size: 18px;
     font-weight: bold;
-    padding: 18px 24px;
-    margin: 10px 0;
+    padding: 16px 20px;
+    margin: 8px 0;
     border: none;
     border-radius: 10px;
     background-color: #007bff;
@@ -105,6 +122,12 @@
     background-color: #0056b3;
     transform: translateY(2px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-secondary {
+    background-color: #6c757d !important;
+  }
+  .btn-secondary:active {
+    background-color: #5a6268 !important;
   }
   .judge-btns {
     display: flex;
@@ -130,6 +153,24 @@
   .btn-correct:active {
     background-color: #27ae60 !important;
   }
+  .history-box {
+    text-align: left;
+    margin-top: 20px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+  }
+  .history-item {
+    border-bottom: 1px solid #ddd;
+    padding: 5px 0;
+  }
+  .history-item:last-child {
+    border-bottom: none;
+  }
   .hidden {
     display: none !important;
   }
@@ -139,25 +180,70 @@
 
 <div class="container">
   <div class="app-title">メジャーシステム記憶訓練</div>
-  <div class="settings" id="settingsArea">
+  
+  <div id="mainMenu">
+    <button id="gotoBasicBtn">基礎訓練（1単語の反復）</button>
+    <button id="gotoAdvBtn" style="background-color: #fd7e14;">応用訓練（複数桁の記憶）</button>
+  </div>
+
+  <div id="basicSettingsArea" class="settings hidden">
+    <h3 style="margin-top: 0;">基礎訓練 設定</h3>
     <label><input type="radio" name="mode" value="numToWord" checked> 数字 から 単語</label>
     <label><input type="radio" name="mode" value="wordToNum"> 単語 から 数字</label>
+    <button id="startBasicBtn">訓練スタート</button>
+    <button class="btn-secondary backToMenuBtn">メニューへ戻る</button>
   </div>
   
-  <button id="startBtn">訓練スタート</button>
-  
-  <div id="playArea" class="hidden">
-    <div id="questionDisplay" class="question-box"></div>
-    <div id="answerDisplay" class="answer-box"></div>
-    
-    <button id="showAnswerBtn">答えを見る</button>
-    <div id="judgeBtns" class="judge-btns hidden">
-      <button id="wrongBtn" class="btn-wrong">間違えた<br><span style="font-size:14px; font-weight:normal;">(すぐ復習)</span></button>
-      <button id="correctBtn" class="btn-correct">正解した<br><span style="font-size:14px; font-weight:normal;">(間隔を空ける)</span></button>
+  <div id="basicPlayArea" class="hidden">
+    <div id="basicQuestionDisplay" class="question-box"></div>
+    <div id="basicAnswerDisplay" class="answer-box"></div>
+    <button id="basicShowAnswerBtn">答えを見る</button>
+    <div id="basicJudgeBtns" class="judge-btns hidden">
+      <button id="basicWrongBtn" class="btn-wrong">間違えた<br><span style="font-size:14px; font-weight:normal;">(すぐ復習)</span></button>
+      <button id="basicCorrectBtn" class="btn-correct">正解した<br><span style="font-size:14px; font-weight:normal;">(間隔を空ける)</span></button>
     </div>
-    
-    <button id="endBtn" style="background-color: #6c757d; margin-top: 40px;">終了して設定へ</button>
+    <button class="btn-secondary endBasicBtn" style="margin-top: 30px;">終了して戻る</button>
   </div>
+
+  <div id="advSettingsArea" class="settings hidden">
+    <h3 style="margin-top: 0;">応用訓練 設定</h3>
+    <label>出題する桁数 (2桁で1単語):</label>
+    <select id="advDigitsSelect">
+      <option value="4">4桁 (2単語)</option>
+      <option value="6">6桁 (3単語)</option>
+      <option value="8">8桁 (4単語)</option>
+      <option value="10">10桁 (5単語)</option>
+      <option value="12" selected>12桁 (6単語)</option>
+    </select>
+    <label>問題数:</label>
+    <select id="advQuestionsSelect">
+      <option value="5">5問</option>
+      <option value="10" selected>10問</option>
+      <option value="20">20問</option>
+    </select>
+    <button id="startAdvBtn" style="background-color: #fd7e14;">応用訓練スタート</button>
+    <button class="btn-secondary backToMenuBtn">メニューへ戻る</button>
+  </div>
+
+  <div id="advPlayArea" class="hidden">
+    <div style="font-weight: bold; color: #555;" id="advProgress">1 / 10問目</div>
+    <div id="advQuestionDisplay" class="question-box"></div>
+    <div id="advAnswerDisplay" class="answer-box"></div>
+    <button id="advShowAnswerBtn">答えを見る</button>
+    <div id="advJudgeBtns" class="judge-btns hidden">
+      <button id="advWrongBtn" class="btn-wrong">間違えた</button>
+      <button id="advCorrectBtn" class="btn-correct">正解した</button>
+    </div>
+    <button class="btn-secondary endAdvBtn" style="margin-top: 30px;">途中で終了する</button>
+  </div>
+
+  <div id="advResultArea" class="hidden">
+    <h3 style="margin-top: 0; color: #fd7e14;">訓練結果</h3>
+    <div id="advResultText" style="font-size: 24px; font-weight: bold; margin: 20px 0;"></div>
+    <div class="history-box" id="historyBox"></div>
+    <button class="btn-secondary backToMenuBtn" style="margin-top: 20px;">メニューへ戻る</button>
+  </div>
+
 </div>
 
 <script>
@@ -262,10 +348,11 @@ const rawData = `00:sauce（ソース）/sɔːs/
 98:beef（牛肉）/biːf/
 99:baby（赤ちゃん）/ˈbeɪbi/`;
 
+const dataMap = {};
 const dataList = rawData.trim().split('\n').map(line => {
   const match = line.match(/^(\d{2}):(.*?)（(.*?)）(.*)$/);
   if(match) {
-    return {
+    const item = {
       num: match[1],
       word: match[2].trim(),
       jp: match[3],
@@ -273,116 +360,196 @@ const dataList = rawData.trim().split('\n').map(line => {
       interval: 0,
       nextTurn: 0
     };
+    dataMap[item.num] = item;
+    return item;
   }
   return null;
 }).filter(item => item !== null);
 
-let currentMode = '';
-let currentQuestion = null;
-let turn = 0;
+const views = {
+  mainMenu: document.getElementById('mainMenu'),
+  basicSettings: document.getElementById('basicSettingsArea'),
+  basicPlay: document.getElementById('basicPlayArea'),
+  advSettings: document.getElementById('advSettingsArea'),
+  advPlay: document.getElementById('advPlayArea'),
+  advResult: document.getElementById('advResultArea')
+};
 
-const settingsArea = document.getElementById('settingsArea');
-const startBtn = document.getElementById('startBtn');
-const playArea = document.getElementById('playArea');
-const questionDisplay = document.getElementById('questionDisplay');
-const answerDisplay = document.getElementById('answerDisplay');
-const showAnswerBtn = document.getElementById('showAnswerBtn');
-const judgeBtns = document.getElementById('judgeBtns');
-const endBtn = document.getElementById('endBtn');
-const wrongBtn = document.getElementById('wrongBtn');
-const correctBtn = document.getElementById('correctBtn');
-
-function resetProgress() {
-  dataList.forEach(item => {
-    item.interval = 0;
-    item.nextTurn = 0;
-  });
-  turn = 0;
+function showView(viewName) {
+  Object.values(views).forEach(v => v.classList.add('hidden'));
+  views[viewName].classList.remove('hidden');
 }
 
-function showNextQuestion() {
-  turn++;
-  
-  let reviewItems = dataList.filter(item => item.nextTurn > 0 && item.nextTurn <= turn);
-  
-  if (reviewItems.length > 1 && currentQuestion) {
-    reviewItems = reviewItems.filter(item => item.num !== currentQuestion.num);
+document.querySelectorAll('.backToMenuBtn, .endBasicBtn, .endAdvBtn').forEach(btn => {
+  btn.addEventListener('click', () => showView('mainMenu'));
+});
+
+document.getElementById('gotoBasicBtn').addEventListener('click', () => showView('basicSettings'));
+document.getElementById('gotoAdvBtn').addEventListener('click', () => showView('advSettings'));
+
+let basicMode = '';
+let basicQuestion = null;
+let basicTurn = 0;
+
+function resetBasicProgress() {
+  dataList.forEach(item => { item.interval = 0; item.nextTurn = 0; });
+  basicTurn = 0;
+}
+
+function showNextBasicQuestion() {
+  basicTurn++;
+  let reviewItems = dataList.filter(item => item.nextTurn > 0 && item.nextTurn <= basicTurn);
+  if (reviewItems.length > 1 && basicQuestion) {
+    reviewItems = reviewItems.filter(item => item.num !== basicQuestion.num);
   }
   
   if (reviewItems.length > 0) {
-    const randomIndex = Math.floor(Math.random() * reviewItems.length);
-    currentQuestion = reviewItems[randomIndex];
+    basicQuestion = reviewItems[Math.floor(Math.random() * reviewItems.length)];
   } else {
     let freshItems = dataList.filter(item => item.nextTurn === 0);
-    
     if (freshItems.length === 0) {
-      let others = dataList.filter(item => item.num !== currentQuestion?.num);
+      let others = dataList.filter(item => item.num !== basicQuestion?.num);
       if (others.length === 0) others = dataList;
-      currentQuestion = others[Math.floor(Math.random() * others.length)];
+      basicQuestion = others[Math.floor(Math.random() * others.length)];
     } else {
-      currentQuestion = freshItems[Math.floor(Math.random() * freshItems.length)];
+      basicQuestion = freshItems[Math.floor(Math.random() * freshItems.length)];
     }
   }
   
-  answerDisplay.innerHTML = '';
-  showAnswerBtn.classList.remove('hidden');
-  judgeBtns.classList.add('hidden');
+  document.getElementById('basicAnswerDisplay').innerHTML = '';
+  document.getElementById('basicShowAnswerBtn').classList.remove('hidden');
+  document.getElementById('basicJudgeBtns').classList.add('hidden');
   
-  if (currentMode === 'numToWord') {
-    questionDisplay.textContent = currentQuestion.num;
+  const qDisplay = document.getElementById('basicQuestionDisplay');
+  if (basicMode === 'numToWord') {
+    qDisplay.textContent = basicQuestion.num;
   } else {
-    questionDisplay.textContent = currentQuestion.word;
+    qDisplay.textContent = basicQuestion.word;
   }
 }
 
-function handleAnswer(isCorrect) {
+function handleBasicAnswer(isCorrect) {
   if (isCorrect) {
-    if (currentQuestion.interval === 0) {
-      currentQuestion.interval = 20;
-    } else {
-      currentQuestion.interval = currentQuestion.interval * 2;
-    }
+    basicQuestion.interval = basicQuestion.interval === 0 ? 20 : basicQuestion.interval * 2;
   } else {
-    currentQuestion.interval = 3;
+    basicQuestion.interval = 3;
   }
-  
-  currentQuestion.nextTurn = turn + currentQuestion.interval;
-  showNextQuestion();
+  basicQuestion.nextTurn = basicTurn + basicQuestion.interval;
+  showNextBasicQuestion();
 }
 
-startBtn.addEventListener('click', () => {
+document.getElementById('startBasicBtn').addEventListener('click', () => {
   const modeRadios = document.getElementsByName('mode');
   for (let radio of modeRadios) {
-    if (radio.checked) {
-      currentMode = radio.value;
-      break;
-    }
+    if (radio.checked) { basicMode = radio.value; break; }
+  }
+  resetBasicProgress();
+  showView('basicPlay');
+  showNextBasicQuestion();
+});
+
+document.getElementById('basicShowAnswerBtn').addEventListener('click', () => {
+  const ansHtml = '<div class="ans-item"><span class="ans-main">' + basicQuestion.num + " : " + basicQuestion.word + '</span><br><span class="ans-jp">（' + basicQuestion.jp + '）</span></div>';
+  document.getElementById('basicAnswerDisplay').innerHTML = ansHtml;
+  document.getElementById('basicShowAnswerBtn').classList.add('hidden');
+  document.getElementById('basicJudgeBtns').classList.remove('hidden');
+});
+
+document.getElementById('basicWrongBtn').addEventListener('click', () => handleBasicAnswer(false));
+document.getElementById('basicCorrectBtn').addEventListener('click', () => handleBasicAnswer(true));
+
+let advTotalQuestions = 0;
+let advCurrentQuestionNum = 0;
+let advCorrectCount = 0;
+let advDigits = 0;
+let currentAdvNumStr = "";
+
+function startAdvQuestion() {
+  advCurrentQuestionNum++;
+  if (advCurrentQuestionNum > advTotalQuestions) {
+    endAdvTraining();
+    return;
   }
   
-  resetProgress();
+  document.getElementById('advProgress').textContent = advCurrentQuestionNum + " / " + advTotalQuestions + "問目";
   
-  settingsArea.classList.add('hidden');
-  startBtn.classList.add('hidden');
-  playArea.classList.remove('hidden');
+  currentAdvNumStr = "";
+  for(let i=0; i<advDigits; i++){
+    currentAdvNumStr += Math.floor(Math.random() * 10).toString();
+  }
   
-  showNextQuestion();
+  const displayNum = currentAdvNumStr.match(/.{1,2}/g).join(' ');
+  document.getElementById('advQuestionDisplay').textContent = displayNum;
+  
+  document.getElementById('advAnswerDisplay').innerHTML = '';
+  document.getElementById('advShowAnswerBtn').classList.remove('hidden');
+  document.getElementById('advJudgeBtns').classList.add('hidden');
+}
+
+function endAdvTraining() {
+  const wrongCount = advTotalQuestions - advCorrectCount;
+  document.getElementById('advResultText').innerHTML = advTotalQuestions + "問中 <span style='color:#2ecc71'>" + advCorrectCount + "問正解</span><br><span style='font-size:18px; color:#e74c3c'>(" + wrongCount + "問間違い)</span>";
+  saveHistory(advDigits, advTotalQuestions, advCorrectCount);
+  renderHistory();
+  showView('advResult');
+}
+
+document.getElementById('startAdvBtn').addEventListener('click', () => {
+  advDigits = parseInt(document.getElementById('advDigitsSelect').value, 10);
+  advTotalQuestions = parseInt(document.getElementById('advQuestionsSelect').value, 10);
+  advCurrentQuestionNum = 0;
+  advCorrectCount = 0;
+  showView('advPlay');
+  startAdvQuestion();
 });
 
-showAnswerBtn.addEventListener('click', () => {
-  const ansHtml = '<div class="ans-item ans-main">' + currentQuestion.num + " : " + currentQuestion.word + '</div><div class="ans-item ans-jp">（' + currentQuestion.jp + '）</div><div class="ans-item ans-ipa">' + currentQuestion.ipa + '</div>';
-  answerDisplay.innerHTML = ansHtml;
-  showAnswerBtn.classList.add('hidden');
-  judgeBtns.classList.remove('hidden');
+document.getElementById('advShowAnswerBtn').addEventListener('click', () => {
+  const chunks = currentAdvNumStr.match(/.{1,2}/g);
+  let ansHtml = '';
+  chunks.forEach(chunk => {
+    const item = dataMap[chunk];
+    ansHtml += '<div class="ans-item"><span class="ans-main">' + chunk + ' : ' + item.word + '</span><br><span class="ans-jp">（' + item.jp + '）</span></div>';
+  });
+  
+  document.getElementById('advAnswerDisplay').innerHTML = ansHtml;
+  document.getElementById('advShowAnswerBtn').classList.add('hidden');
+  document.getElementById('advJudgeBtns').classList.remove('hidden');
 });
 
-wrongBtn.addEventListener('click', () => handleAnswer(false));
-correctBtn.addEventListener('click', () => handleAnswer(true));
-
-endBtn.addEventListener('click', () => {
-  playArea.classList.add('hidden');
-  settingsArea.classList.remove('hidden');
-  startBtn.classList.remove('hidden');
+document.getElementById('advWrongBtn').addEventListener('click', () => {
+  startAdvQuestion();
 });
+
+document.getElementById('advCorrectBtn').addEventListener('click', () => {
+  advCorrectCount++;
+  startAdvQuestion();
+});
+
+function saveHistory(digits, total, correct) {
+  let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
+  const now = new Date();
+  const dateStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+  
+  history.unshift({ date: dateStr, digits: digits, total: total, correct: correct });
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('majorSysHistory', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const box = document.getElementById('historyBox');
+  let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
+  
+  if (history.length === 0) {
+    box.innerHTML = "過去の記録はまだありません。";
+    return;
+  }
+  
+  let html = '<div style="font-weight:bold; margin-bottom:10px;">直近の記録 (最大20件)</div>';
+  history.forEach(h => {
+    html += '<div class="history-item">' + h.date + ' - ' + h.digits + '桁: ' + h.total + '問中' + h.correct + '問正解</div>';
+  });
+  box.innerHTML = html;
+}
 </script>
 </body>
 </html>
