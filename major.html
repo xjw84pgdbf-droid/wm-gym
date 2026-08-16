@@ -171,6 +171,20 @@
   .history-item:last-child {
     border-bottom: none;
   }
+  input[type="tel"], input[type="number"] {
+    font-size: 24px;
+    padding: 12px;
+    width: 80%;
+    margin: 15px 0;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+  input[type="tel"]:focus, input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+  }
   .hidden {
     display: none !important;
   }
@@ -179,13 +193,15 @@
 <body>
 
 <div class="container">
-  <div class="app-title">メジャーシステム記憶訓練</div>
+  <div class="app-title">総合記憶・WM訓練</div>
   
   <div id="mainMenu">
     <button id="gotoBasicBtn">基礎訓練（1単語の反復）</button>
-    <button id="gotoAdvBtn" style="background-color: #fd7e14;">応用訓練（複数桁の記憶）</button>
+    <button id="gotoAdvBtn" style="background-color: #fd7e14;">応用訓練（複数桁の変換）</button>
+    <button id="gotoWmBtn" style="background-color: #28a745;">WM訓練（記憶＋計算）</button>
   </div>
 
+  <!-- 基礎訓練 -->
   <div id="basicSettingsArea" class="settings hidden">
     <h3 style="margin-top: 0;">基礎訓練 設定</h3>
     <label><input type="radio" name="mode" value="numToWord" checked> 数字 から 単語</label>
@@ -205,8 +221,9 @@
     <button class="btn-secondary endBasicBtn" style="margin-top: 30px;">終了して戻る</button>
   </div>
 
+  <!-- 応用訓練 -->
   <div id="advSettingsArea" class="settings hidden">
-    <h3 style="margin-top: 0;">応用訓練 設定</h3>
+    <h3 style="margin-top: 0; color: #fd7e14;">応用訓練 設定</h3>
     <label>出題する桁数 (3〜12桁):</label>
     <select id="advDigitsSelect">
       <option value="3">3桁</option>
@@ -243,15 +260,69 @@
   </div>
 
   <div id="advResultArea" class="hidden">
-    <h3 style="margin-top: 0; color: #fd7e14;">訓練結果</h3>
+    <h3 style="margin-top: 0; color: #fd7e14;">応用訓練 結果</h3>
     <div id="advResultText" style="font-size: 24px; font-weight: bold; margin: 20px 0;"></div>
-    <div class="history-box" id="historyBox"></div>
+    <div class="history-box" id="advHistoryBox"></div>
+    <button class="btn-secondary backToMenuBtn" style="margin-top: 20px;">メニューへ戻る</button>
+  </div>
+
+  <!-- WM訓練 -->
+  <div id="wmSettingsArea" class="settings hidden">
+    <h3 style="margin-top: 0; color: #28a745;">WM訓練 設定</h3>
+    <label>記憶する桁数:</label>
+    <select id="wmDigitsSelect">
+      <option value="4">4桁</option>
+      <option value="5">5桁</option>
+      <option value="6" selected>6桁</option>
+      <option value="7">7桁</option>
+      <option value="8">8桁</option>
+      <option value="9">9桁</option>
+      <option value="10">10桁</option>
+    </select>
+    <label>計算問題の数:</label>
+    <select id="wmMathCountSelect">
+      <option value="3">3問</option>
+      <option value="5" selected>5問</option>
+      <option value="10">10問</option>
+    </select>
+    <button id="startWmBtn" style="background-color: #28a745;">WM訓練スタート</button>
+    <button class="btn-secondary backToMenuBtn">メニューへ戻る</button>
+  </div>
+
+  <div id="wmMemorizeArea" class="hidden">
+    <div style="font-weight: bold; color: #555; margin-bottom: 20px;">この数字を記憶してください</div>
+    <div id="wmTargetNumberDisplay" class="question-box" style="font-size: 56px; letter-spacing: 5px;"></div>
+    <button id="wmMemorizedBtn" style="background-color: #28a745;">覚えた！次へ</button>
+    <button class="btn-secondary endWmBtn" style="margin-top: 30px;">途中で終了する</button>
+  </div>
+
+  <div id="wmMathArea" class="hidden">
+    <div style="font-weight: bold; color: #555; margin-bottom: 20px;" id="wmMathProgress">計算問題: 1 / 5</div>
+    <div id="wmMathQuestionDisplay" class="question-box" style="font-size: 40px; margin-bottom: 10px;"></div>
+    <input type="number" id="wmMathInput" placeholder="答え">
+    <button id="wmMathSubmitBtn" style="background-color: #007bff;">答える</button>
+    <div style="font-size: 14px; color: #777; margin-top: 15px;">※間違えると枠が赤くなります</div>
+    <button class="btn-secondary endWmBtn" style="margin-top: 30px;">途中で終了する</button>
+  </div>
+
+  <div id="wmRecallArea" class="hidden">
+    <div style="font-weight: bold; color: #555; margin-bottom: 20px;">最初に覚えた数字を入力してください</div>
+    <input type="tel" id="wmRecallInput" placeholder="数字を入力">
+    <button id="wmRecallSubmitBtn" style="background-color: #28a745;">判定する</button>
+    <button class="btn-secondary endWmBtn" style="margin-top: 30px;">途中で終了する</button>
+  </div>
+
+  <div id="wmResultArea" class="hidden">
+    <h3 style="margin-top: 0; color: #28a745;">WM訓練 結果</h3>
+    <div id="wmResultText" style="font-size: 20px; font-weight: bold; margin: 20px 0; line-height: 1.5;"></div>
+    <div class="history-box" id="wmHistoryBox"></div>
     <button class="btn-secondary backToMenuBtn" style="margin-top: 20px;">メニューへ戻る</button>
   </div>
 
 </div>
 
 <script>
+// データ定義
 const rawData = `00:sauce（ソース）/sɔːs/
 01:suit（スーツ）/suːt/
 02:sun（太陽）/sʌn/
@@ -371,13 +442,19 @@ const dataList = rawData.trim().split('\n').map(line => {
   return null;
 }).filter(item => item !== null);
 
+// 画面遷移管理
 const views = {
   mainMenu: document.getElementById('mainMenu'),
   basicSettings: document.getElementById('basicSettingsArea'),
   basicPlay: document.getElementById('basicPlayArea'),
   advSettings: document.getElementById('advSettingsArea'),
   advPlay: document.getElementById('advPlayArea'),
-  advResult: document.getElementById('advResultArea')
+  advResult: document.getElementById('advResultArea'),
+  wmSettings: document.getElementById('wmSettingsArea'),
+  wmMemorize: document.getElementById('wmMemorizeArea'),
+  wmMath: document.getElementById('wmMathArea'),
+  wmRecall: document.getElementById('wmRecallArea'),
+  wmResult: document.getElementById('wmResultArea')
 };
 
 function showView(viewName) {
@@ -385,13 +462,15 @@ function showView(viewName) {
   views[viewName].classList.remove('hidden');
 }
 
-document.querySelectorAll('.backToMenuBtn, .endBasicBtn, .endAdvBtn').forEach(btn => {
+document.querySelectorAll('.backToMenuBtn, .endBasicBtn, .endAdvBtn, .endWmBtn').forEach(btn => {
   btn.addEventListener('click', () => showView('mainMenu'));
 });
 
 document.getElementById('gotoBasicBtn').addEventListener('click', () => showView('basicSettings'));
 document.getElementById('gotoAdvBtn').addEventListener('click', () => showView('advSettings'));
+document.getElementById('gotoWmBtn').addEventListener('click', () => showView('wmSettings'));
 
+// --- 基礎訓練 ---
 let basicMode = '';
 let basicQuestion = null;
 let basicTurn = 0;
@@ -463,6 +542,7 @@ document.getElementById('basicShowAnswerBtn').addEventListener('click', () => {
 document.getElementById('basicWrongBtn').addEventListener('click', () => handleBasicAnswer(false));
 document.getElementById('basicCorrectBtn').addEventListener('click', () => handleBasicAnswer(true));
 
+// --- 応用訓練 ---
 let advTotalQuestions = 0;
 let advCurrentQuestionNum = 0;
 let advCorrectCount = 0;
@@ -484,7 +564,6 @@ function startAdvQuestion() {
   }
   
   document.getElementById('advQuestionDisplay').textContent = currentAdvNumStr;
-  
   document.getElementById('advAnswerDisplay').innerHTML = '';
   document.getElementById('advShowAnswerBtn').classList.remove('hidden');
   document.getElementById('advJudgeBtns').classList.add('hidden');
@@ -493,8 +572,8 @@ function startAdvQuestion() {
 function endAdvTraining() {
   const wrongCount = advTotalQuestions - advCorrectCount;
   document.getElementById('advResultText').innerHTML = advTotalQuestions + "問中 <span style='color:#2ecc71'>" + advCorrectCount + "問正解</span><br><span style='font-size:18px; color:#e74c3c'>(" + wrongCount + "問間違い)</span>";
-  saveHistory(advDigits, advTotalQuestions, advCorrectCount);
-  renderHistory();
+  saveAdvHistory(advDigits, advTotalQuestions, advCorrectCount);
+  renderAdvHistory();
   showView('advResult');
 }
 
@@ -527,16 +606,10 @@ document.getElementById('advShowAnswerBtn').addEventListener('click', () => {
   document.getElementById('advJudgeBtns').classList.remove('hidden');
 });
 
-document.getElementById('advWrongBtn').addEventListener('click', () => {
-  startAdvQuestion();
-});
+document.getElementById('advWrongBtn').addEventListener('click', () => startAdvQuestion());
+document.getElementById('advCorrectBtn').addEventListener('click', () => { advCorrectCount++; startAdvQuestion(); });
 
-document.getElementById('advCorrectBtn').addEventListener('click', () => {
-  advCorrectCount++;
-  startAdvQuestion();
-});
-
-function saveHistory(digits, total, correct) {
+function saveAdvHistory(digits, total, correct) {
   let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
   const now = new Date();
   const dateStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -546,18 +619,124 @@ function saveHistory(digits, total, correct) {
   localStorage.setItem('majorSysHistory', JSON.stringify(history));
 }
 
-function renderHistory() {
-  const box = document.getElementById('historyBox');
+function renderAdvHistory() {
+  const box = document.getElementById('advHistoryBox');
   let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
-  
   if (history.length === 0) {
     box.innerHTML = "過去の記録はまだありません。";
     return;
   }
-  
   let html = '<div style="font-weight:bold; margin-bottom:10px;">直近の記録 (最大20件)</div>';
   history.forEach(h => {
     html += '<div class="history-item">' + h.date + ' - ' + h.digits + '桁: ' + h.total + '問中' + h.correct + '問正解</div>';
+  });
+  box.innerHTML = html;
+}
+
+// --- WM訓練 ---
+let wmTargetStr = "";
+let wmMathCount = 0;
+let wmMathTotal = 0;
+let wmCurrentMathAnswer = 0;
+let wmDigits = 0;
+
+document.getElementById('startWmBtn').addEventListener('click', () => {
+  wmDigits = parseInt(document.getElementById('wmDigitsSelect').value, 10);
+  wmMathTotal = parseInt(document.getElementById('wmMathCountSelect').value, 10);
+  wmMathCount = 0;
+  
+  wmTargetStr = "";
+  for(let i=0; i<wmDigits; i++){
+    wmTargetStr += Math.floor(Math.random() * 10).toString();
+  }
+  
+  document.getElementById('wmTargetNumberDisplay').textContent = wmTargetStr;
+  showView('wmMemorize');
+});
+
+document.getElementById('wmMemorizedBtn').addEventListener('click', () => {
+  showView('wmMath');
+  generateMathQuestion();
+});
+
+function generateMathQuestion() {
+  wmMathCount++;
+  if (wmMathCount > wmMathTotal) {
+    document.getElementById('wmRecallInput').value = '';
+    showView('wmRecall');
+    return;
+  }
+  
+  document.getElementById('wmMathProgress').textContent = `計算問題: ${wmMathCount} / ${wmMathTotal}`;
+  
+  const isPlus = Math.random() > 0.5;
+  let a, b;
+  if (isPlus) {
+    a = Math.floor(Math.random() * 9) + 1;
+    b = Math.floor(Math.random() * 9) + 1;
+    wmCurrentMathAnswer = a + b;
+    document.getElementById('wmMathQuestionDisplay').textContent = `${a} + ${b} = ?`;
+  } else {
+    wmCurrentMathAnswer = Math.floor(Math.random() * 9) + 1;
+    b = Math.floor(Math.random() * 9) + 1;
+    a = wmCurrentMathAnswer + b; 
+    document.getElementById('wmMathQuestionDisplay').textContent = `${a} - ${b} = ?`;
+  }
+  
+  const input = document.getElementById('wmMathInput');
+  input.value = '';
+  input.style.borderColor = '#ccc';
+  // スマホでフォーカスを促す
+  setTimeout(() => input.focus(), 100);
+}
+
+document.getElementById('wmMathSubmitBtn').addEventListener('click', () => {
+  const inputVal = parseInt(document.getElementById('wmMathInput').value, 10);
+  if (inputVal === wmCurrentMathAnswer) {
+    generateMathQuestion();
+  } else {
+    document.getElementById('wmMathInput').style.borderColor = '#e74c3c';
+    document.getElementById('wmMathInput').value = '';
+  }
+});
+
+document.getElementById('wmRecallSubmitBtn').addEventListener('click', () => {
+  const inputVal = document.getElementById('wmRecallInput').value.trim();
+  const isCorrect = (inputVal === wmTargetStr);
+  
+  const resText = document.getElementById('wmResultText');
+  if (isCorrect) {
+    resText.innerHTML = `<span style="color:#2ecc71; font-size:28px;">大正解！</span><br><br>覚えた数字: ${wmTargetStr}`;
+  } else {
+    resText.innerHTML = `<span style="color:#e74c3c; font-size:28px;">残念...</span><br><br>正解: ${wmTargetStr}<br>入力: ${inputVal}`;
+  }
+  
+  saveWmHistory(wmDigits, isCorrect);
+  renderWmHistory();
+  showView('wmResult');
+});
+
+function saveWmHistory(digits, isCorrect) {
+  let history = JSON.parse(localStorage.getItem('wmHistory')) || [];
+  const now = new Date();
+  const dateStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+  
+  history.unshift({ date: dateStr, digits: digits, result: isCorrect ? '成功' : '失敗' });
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('wmHistory', JSON.stringify(history));
+}
+
+function renderWmHistory() {
+  const box = document.getElementById('wmHistoryBox');
+  let history = JSON.parse(localStorage.getItem('wmHistory')) || [];
+  if (history.length === 0) {
+    box.innerHTML = "過去の記録はまだありません。";
+    return;
+  }
+  let html = '<div style="font-weight:bold; margin-bottom:10px;">直近の記録 (最大20件)</div>';
+  history.forEach(h => {
+    const color = h.result === '成功' ? '#2ecc71' : '#e74c3c';
+    html += '<div class="history-item">' + h.date + ' - ' + h.digits + '桁: <span style="color:' + color + ';">' + h.result + '</span></div>';
   });
   box.innerHTML = html;
 }
