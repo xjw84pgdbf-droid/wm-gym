@@ -6,14 +6,13 @@
 <title>メジャーシステム記憶訓練</title>
 <style>
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     text-align: center;
     background-color: #f4f4f9;
     color: #333;
     padding: 20px;
     margin: 0;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
   .container {
     max-width: 400px;
@@ -65,7 +64,6 @@
     border-radius: 8px;
     padding: 15px;
     border: 1px solid #e9ecef;
-    /* 問題の「点」を消すための対策 */
     list-style: none;
     text-indent: 0;
   }
@@ -103,6 +101,29 @@
     transform: translateY(2px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
+  .judge-btns {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+  .judge-btns button {
+    margin: 10px 0;
+    flex: 1;
+    padding: 12px;
+    line-height: 1.4;
+  }
+  .btn-wrong {
+    background-color: #e74c3c !important;
+  }
+  .btn-wrong:active {
+    background-color: #c0392b !important;
+  }
+  .btn-correct {
+    background-color: #2ecc71 !important;
+  }
+  .btn-correct:active {
+    background-color: #27ae60 !important;
+  }
   .hidden {
     display: none !important;
   }
@@ -124,7 +145,11 @@
     <div id="answerDisplay" class="answer-box"></div>
     
     <button id="showAnswerBtn">答えを見る</button>
-    <button id="nextBtn" class="hidden">次へ進む</button>
+    <div id="judgeBtns" class="judge-btns hidden">
+      <button id="wrongBtn" class="btn-wrong">間違えた<br><span style="font-size:14px; font-weight:normal;">(すぐ復習)</span></button>
+      <button id="correctBtn" class="btn-correct">正解した<br><span style="font-size:14px; font-weight:normal;">(間隔を空ける)</span></button>
+    </div>
+    
     <button id="endBtn" style="background-color: #6c757d; margin-top: 40px;">終了して設定へ</button>
   </div>
 </div>
@@ -213,7 +238,7 @@ const rawData = `00:sauce（ソース）/sɔːs/
 80:vase（花瓶）/veɪs/
 81:foot（足）/fʊt/
 82:fan（扇風機）/fæn/
-83:foam（泡    ）/foʊm/
+83:foam（泡）/foʊm/
 84:fire（火）/ˈfaɪər/
 85:file（ファイル）/faɪl/
 86:fish（魚）/fɪʃ/
@@ -238,7 +263,9 @@ const dataList = rawData.trim().split('\n').map(line => {
       num: match[1],
       word: match[2].trim(),
       jp: match[3],
-      ipa: match[4].trim()
+      ipa: match[4].trim(),
+      interval: 0,
+      nextTurn: 0
     };
   }
   return null;
@@ -246,6 +273,7 @@ const dataList = rawData.trim().split('\n').map(line => {
 
 let currentMode = '';
 let currentQuestion = null;
+let turn = 0;
 
 const settingsArea = document.getElementById('settingsArea');
 const startBtn = document.getElementById('startBtn');
@@ -253,25 +281,67 @@ const playArea = document.getElementById('playArea');
 const questionDisplay = document.getElementById('questionDisplay');
 const answerDisplay = document.getElementById('answerDisplay');
 const showAnswerBtn = document.getElementById('showAnswerBtn');
-const nextBtn = document.getElementById('nextBtn');
+const judgeBtns = document.getElementById('judgeBtns');
 const endBtn = document.getElementById('endBtn');
+const wrongBtn = document.getElementById('wrongBtn');
+const correctBtn = document.getElementById('correctBtn');
 
-function getRandomItem() {
-  const randomIndex = Math.floor(Math.random() * dataList.length);
-  return dataList[randomIndex];
+function resetProgress() {
+  dataList.forEach(item => {
+    item.interval = 0;
+    item.nextTurn = 0;
+  });
+  turn = 0;
 }
 
 function showNextQuestion() {
-  currentQuestion = getRandomItem();
+  turn++;
+  
+  let reviewItems = dataList.filter(item => item.nextTurn > 0 && item.nextTurn <= turn);
+  
+  if (reviewItems.length > 1 && currentQuestion) {
+    reviewItems = reviewItems.filter(item => item.num !== currentQuestion.num);
+  }
+  
+  if (reviewItems.length > 0) {
+    const randomIndex = Math.floor(Math.random() * reviewItems.length);
+    currentQuestion = reviewItems[randomIndex];
+  } else {
+    let freshItems = dataList.filter(item => item.nextTurn === 0);
+    
+    if (freshItems.length === 0) {
+      let others = dataList.filter(item => item.num !== currentQuestion?.num);
+      if (others.length === 0) others = dataList;
+      currentQuestion = others[Math.floor(Math.random() * others.length)];
+    } else {
+      currentQuestion = freshItems[Math.floor(Math.random() * freshItems.length)];
+    }
+  }
+  
   answerDisplay.innerHTML = '';
   showAnswerBtn.classList.remove('hidden');
-  nextBtn.classList.add('hidden');
+  judgeBtns.classList.add('hidden');
   
   if (currentMode === 'numToWord') {
     questionDisplay.textContent = currentQuestion.num;
   } else {
     questionDisplay.textContent = currentQuestion.word;
   }
+}
+
+function handleAnswer(isCorrect) {
+  if (isCorrect) {
+    if (currentQuestion.interval === 0) {
+      currentQuestion.interval = 20;
+    } else {
+      currentQuestion.interval = currentQuestion.interval * 2;
+    }
+  } else {
+    currentQuestion.interval = 3;
+  }
+  
+  currentQuestion.nextTurn = turn + currentQuestion.interval;
+  showNextQuestion();
 }
 
 startBtn.addEventListener('click', () => {
@@ -282,6 +352,8 @@ startBtn.addEventListener('click', () => {
       break;
     }
   }
+  
+  resetProgress();
   
   settingsArea.classList.add('hidden');
   startBtn.classList.add('hidden');
@@ -294,10 +366,11 @@ showAnswerBtn.addEventListener('click', () => {
   const ansHtml = '<div class="ans-item ans-main">' + currentQuestion.num + " : " + currentQuestion.word + '</div><div class="ans-item ans-jp">（' + currentQuestion.jp + '）</div><div class="ans-item ans-ipa">' + currentQuestion.ipa + '</div>';
   answerDisplay.innerHTML = ansHtml;
   showAnswerBtn.classList.add('hidden');
-  nextBtn.classList.remove('hidden');
+  judgeBtns.classList.remove('hidden');
 });
 
-nextBtn.addEventListener('click', showNextQuestion);
+wrongBtn.addEventListener('click', () => handleAnswer(false));
+correctBtn.addEventListener('click', () => handleAnswer(true));
 
 endBtn.addEventListener('click', () => {
   playArea.classList.add('hidden');
