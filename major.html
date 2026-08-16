@@ -207,13 +207,18 @@
 
   <div id="advSettingsArea" class="settings hidden">
     <h3 style="margin-top: 0;">応用訓練 設定</h3>
-    <label>出題する桁数 (2桁で1単語):</label>
+    <label>出題する桁数 (3〜12桁):</label>
     <select id="advDigitsSelect">
-      <option value="4">4桁 (2単語)</option>
-      <option value="6">6桁 (3単語)</option>
-      <option value="8">8桁 (4単語)</option>
-      <option value="10">10桁 (5単語)</option>
-      <option value="12" selected>12桁 (6単語)</option>
+      <option value="3">3桁</option>
+      <option value="4">4桁</option>
+      <option value="5">5桁</option>
+      <option value="6">6桁</option>
+      <option value="7">7桁</option>
+      <option value="8">8桁</option>
+      <option value="9">9桁</option>
+      <option value="10">10桁</option>
+      <option value="11">11桁</option>
+      <option value="12" selected>12桁</option>
     </select>
     <label>問題数:</label>
     <select id="advQuestionsSelect">
@@ -478,8 +483,7 @@ function startAdvQuestion() {
     currentAdvNumStr += Math.floor(Math.random() * 10).toString();
   }
   
-  const displayNum = currentAdvNumStr.match(/.{1,2}/g).join(' ');
-  document.getElementById('advQuestionDisplay').textContent = displayNum;
+  document.getElementById('advQuestionDisplay').textContent = currentAdvNumStr;
   
   document.getElementById('advAnswerDisplay').innerHTML = '';
   document.getElementById('advShowAnswerBtn').classList.remove('hidden');
@@ -504,8 +508,15 @@ document.getElementById('startAdvBtn').addEventListener('click', () => {
 });
 
 document.getElementById('advShowAnswerBtn').addEventListener('click', () => {
-  const chunks = currentAdvNumStr.match(/.{1,2}/g);
+  let paddedStr = currentAdvNumStr;
   let ansHtml = '';
+  
+  if (paddedStr.length % 2 !== 0) {
+    paddedStr = "0" + paddedStr;
+    ansHtml += '<div style="font-size:14px; color:#e74c3c; margin-bottom:15px; font-weight:bold;">※奇数桁のため、先頭に0を補って変換しています</div>';
+  }
+  
+  const chunks = paddedStr.match(/.{1,2}/g);
   chunks.forEach(chunk => {
     const item = dataMap[chunk];
     ansHtml += '<div class="ans-item"><span class="ans-main">' + chunk + ' : ' + item.word + '</span><br><span class="ans-jp">（' + item.jp + '）</span></div>';
