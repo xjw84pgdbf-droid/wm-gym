@@ -1,266 +1,504 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>メジャーシステム記憶訓練</title>
-<style>
-  body {
-    font-family: sans-serif;
-    text-align: center;
-    background-color: #f9f9f9;
-    color: #333;
-    padding: 20px;
-    margin: 0;
-  }
-  .container {
-    max-width: 400px;
-    margin: 0 auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  }
-  .app-title {
-    font-size: 20px;
-    margin-bottom: 20px;
-  }
-  .settings {
-    margin-bottom: 20px;
-    text-align: left;
-    font-size: 16px;
-    line-height: 2;
-  }
-  .question-box {
-    font-size: 48px;
-    font-weight: normal;
-    margin: 30px 0;
-    min-height: 70px;
-  }
-  .answer-box {
-    font-size: 20px;
-    color: #0056b3;
-    margin: 20px 0;
-    min-height: 100px;
-    white-space: pre-wrap;
-    line-height: 1.5;
-  }
-  button {
-    font-size: 18px;
-    padding: 12px 24px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-    width: 100%;
-    max-width: 300px;
-  }
-  button:active {
-    background-color: #0056b3;
-  }
-  .hidden {
-    display: none;
-  }
-</style>
-</head>
-<body>
-
-<div class="container">
-  <div class="app-title">メジャーシステム記憶訓練</div>
-  <div class="settings" id="settingsArea">
-    <label><input type="radio" name="mode" value="numToWord" checked> 数字から単語</label><br>
-    <label><input type="radio" name="mode" value="wordToNum"> 単語から数字</label>
-  </div>
-  
-  <button id="startBtn">スタート</button>
-  
-  <div id="playArea" class="hidden">
-    <div id="questionDisplay" class="question-box"></div>
-    <div id="answerDisplay" class="answer-box"></div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ワーキングメモリジム</title>
     
-    <button id="showAnswerBtn">答えを見る</button>
-    <button id="nextBtn" class="hidden">次へ</button>
-    <button id="endBtn" style="background-color: #6c757d; margin-top: 30px;">終了して設定へ戻る</button>
-  </div>
-</div>
+    <!-- iOSホーム画面追加用（PWA）の設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WMジム">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/3b82f6/ffffff?text=WM">
 
-<script>
-const rawData = `00:sauce（ソース）/sɔːs/
-01:suit（スーツ）/suːt/
-02:sun（太陽）/sʌn/
-03:sum（合計）/sʌm/
-04:sir（先生、サー）/sɜːr/
-05:seal（アザラシ）/siːl/
-06:sash（サッシ）/sæʃ/
-07:sack（袋）/sæk/
-08:safe（金庫）/seɪf/
-09:soap（石鹸）/soʊp/
-10:dice（サイコロ）/daɪs/
-11:toad（ヒキガエル）/toʊd/
-12:tin（缶）/tɪn/
-13:dome（ドーム）/doʊm/
-14:tire（タイヤ）/ˈtaɪər/
-15:tail（尻尾）/teɪl/
-16:dish（皿）/dɪʃ/
-17:dog（犬）/dɔːɡ/
-18:TV（テレビ）/ˌtiːˈviː/
-19:tube（チューブ）/tuːb/
-20:nose（鼻）/noʊz/
-21:net（ネット）/net/
-22:neon（ネオン）/ˈniːɑːn/
-23:Nemo（ニモ）/ˈniːmoʊ/
-24:Nero（ネロ、ローマ皇帝）/ˈniːroʊ/
-25:nail（釘、爪）/neɪl/
-26:notch（くぼみ）/nɑːtʃ/
-27:nuke（核兵器）/nuːk/
-28:knife（ナイフ、kは無音）/naɪf/
-29:knob（ドアノブ、kは無音）/nɑːb/
-30:mouse（ネズミ）/maʊs/
-31:mat（マット）/mæt/
-32:moon（月）/muːn/
-33:mummy（ミイラ）/ˈmʌmi/
-34:mower（芝刈り機）/ˈmoʊər/
-35:mole（モグラ）/moʊl/
-36:match（マッチ）/mætʃ/
-37:mug（マグカップ）/mʌɡ/
-38:muff（マフ）/mʌf/
-39:mop（モップ）/mɑːp/
-40:rose（バラ）/roʊz/
-41:rat（ネズミ）/ræt/
-42:rain（雨）/reɪn/
-43:ram（雄羊）/ræm/
-44:rear（後部）/rɪər/
-45:rail（レール）/reɪl/
-46:rush（突進）/rʌʃ/
-47:rock（岩）/rɑːk/
-48:roof（屋根）/ruːf/
-49:rope（ロープ）/roʊp/
-50:lace（レース）/leɪs/
-51:lid（蓋）/lɪd/
-52:lion（ライオン）/ˈlaɪən/
-53:lime（ライム）/laɪm/
-54:lure（ルアー）/lʊər/
-55:lily（ユリ）/ˈlɪli/
-56:leech（ヒル）/liːtʃ/
-57:lock（鍵）/lɑːk/
-58:leaf（葉）/liːf/
-59:lip（唇）/lɪp/
-60:chess（チェス）/tʃes/
-61:jet（ジェット機）/dʒet/
-62:chain（鎖）/tʃeɪn/
-63:gem（宝石）/dʒem/
-64:chair（椅子）/tʃeər/
-65:shell（貝殻）/ʃel/
-66:judge（裁判官）/dʒʌdʒ/
-67:chalk（チョーク、lは無音）/tʃɔːk/
-68:chef（シェフ）/ʃef/
-69:ship（船）/ʃɪp/
-70:gas（ガス）/ɡæs/
-71:cat（猫）/kæt/
-72:gun（銃）/ɡʌn/
-73:gum（ガム）/ɡʌm/
-74:car（車）/kɑːr/
-75:goal（ゴール）/ɡoʊl/
-76:cash（現金）/kæʃ/
-77:cake（ケーキ）/keɪk/
-78:cafe（カフェ）/kæˈfeɪ/
-79:cap（帽子）/kæp/
-80:vase（花瓶）/veɪs/
-81:foot（足）/fʊt/
-82:fan（扇風機）/fæn/
-83:foam（泡）/foʊm/
-84:fire（火）/ˈfaɪər/
-85:file（ファイル）/faɪl/
-86:fish（魚）/fɪʃ/
-87:fog（霧）/fɑːɡ/
-88:fife（横笛）/faɪf/
-89:vape（電子タバコ）/veɪp/
-90:bus（バス）/bʌs/
-91:bat（コウモリ）/bæt/
-92:bone（骨）/boʊn/
-93:bomb（爆弾、最後のbは無音）/bɑːm/
-94:bear（熊）/beər/
-95:pill（薬）/pɪl/
-96:peach（桃）/piːtʃ/
-97:pig（豚）/pɪɡ/
-98:beef（牛肉）/biːf/
-99:baby（赤ちゃん）/ˈbeɪbi/`;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation; /* ダブルタップズーム防止 */
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 入力フィールドのスピンボタン（上下矢印）を隠す */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col items-center justify-center p-4">
 
-const dataList = rawData.trim().split('\n').map(line => {
-  const match = line.match(/^(\d{2}):(.*?)（(.*?)）(.*)$/);
-  if(match) {
-    return {
-      num: match[1],
-      word: match[2].trim(),
-      jp: match[3],
-      ipa: match[4].trim()
-    };
-  }
-  return null;
-}).filter(item => item !== null);
+    <div id="app-container" class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden min-h-[500px] flex flex-col relative fade-in">
+        
+        <!-- ヘッダー（戻る・終了ボタン） -->
+        <div class="bg-blue-600 text-white flex justify-between items-center px-4 py-3 shadow-md z-10">
+            <button id="btn-back" onclick="goBack()" class="hidden text-sm font-bold opacity-80 hover:opacity-100 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg> 戻る</button>
+            <div class="font-bold text-lg tracking-wider mx-auto text-center flex-1">WM GYM</div>
+            <button id="btn-quit" onclick="resetTraining()" class="hidden text-sm font-bold opacity-80 hover:opacity-100 flex items-center gap-1">終了 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+        </div>
 
-let currentMode = '';
-let currentQuestion = null;
+        <div class="flex-1 p-6 flex flex-col justify-center items-center text-center overflow-y-auto">
 
-const settingsArea = document.getElementById('settingsArea');
-const startBtn = document.getElementById('startBtn');
-const playArea = document.getElementById('playArea');
-const questionDisplay = document.getElementById('questionDisplay');
-const answerDisplay = document.getElementById('answerDisplay');
-const showAnswerBtn = document.getElementById('showAnswerBtn');
-const nextBtn = document.getElementById('nextBtn');
-const endBtn = document.getElementById('endBtn');
+            <!-- 1. スタート画面 -->
+            <div id="screen-start" class="w-full">
+                <h2 class="text-2xl font-bold mb-4 text-slate-700">トレーニング設定</h2>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 text-left">
+                    <h3 class="text-md font-bold text-blue-600 mb-3 border-b border-slate-200 pb-1">🧠 記憶タスク</h3>
+                    <label class="block text-sm font-bold text-slate-600 mb-1">種類</label>
+                    <select id="setting-memory-type" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+                        <option value="random">ランダム</option>
+                        <option value="forward_num" selected>数字 (順番通り)</option>
+                        <option value="backward_num">数字 (逆から)</option>
+                        <option value="words">単語</option>
+                    </select>
+                    
+                    <label class="block text-sm font-bold text-slate-600 mb-1">要素数 (難易度)</label>
+                    <select id="setting-length" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5" selected>5 (標準)</option>
+                        <option value="6">6</option>
+                        <option value="7">7 (高難度)</option>
+                        <option value="8">8</option>
+                    </select>
+                </div>
 
-function getRandomItem() {
-  const randomIndex = Math.floor(Math.random() * dataList.length);
-  return dataList[randomIndex];
-}
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 text-left">
+                    <h3 class="text-md font-bold text-rose-500 mb-3 border-b border-slate-200 pb-1">🧮 計算タスク</h3>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">問題数</label>
+                            <select id="setting-math-count" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="1">1問</option>
+                                <option value="2" selected>2問</option>
+                                <option value="3">3問</option>
+                                <option value="4">4問</option>
+                                <option value="5">5問</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-1">桁数</label>
+                            <select id="setting-math-digits" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="1">1桁</option>
+                                <option value="2" selected>2桁</option>
+                                <option value="3">3桁</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="block text-sm font-bold text-slate-600 mb-1">四則演算</label>
+                    <select id="setting-math-op" class="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="+" selected>足し算 (+)</option>
+                        <option value="-">引き算 (-)</option>
+                        <option value="*">掛け算 (×)</option>
+                        <option value="/">割り算 (÷)</option>
+                        <option value="mix">ミックス</option>
+                    </select>
+                </div>
 
-function showNextQuestion() {
-  currentQuestion = getRandomItem();
-  answerDisplay.textContent = '';
-  showAnswerBtn.classList.remove('hidden');
-  nextBtn.classList.add('hidden');
-  
-  if (currentMode === 'numToWord') {
-    questionDisplay.textContent = currentQuestion.num;
-  } else {
-    questionDisplay.textContent = currentQuestion.word;
-  }
-}
+                <button onclick="startTraining()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition transform active:scale-95 text-lg">
+                    トレーニング開始
+                </button>
+            </div>
 
-startBtn.addEventListener('click', () => {
-  const modeRadios = document.getElementsByName('mode');
-  for (let radio of modeRadios) {
-    if (radio.checked) {
-      currentMode = radio.value;
-      break;
-    }
-  }
-  
-  settingsArea.classList.add('hidden');
-  startBtn.classList.add('hidden');
-  playArea.classList.remove('hidden');
-  
-  showNextQuestion();
-});
+            <!-- 2. 記憶画面 -->
+            <div id="screen-memory" class="w-full hidden fade-in">
+                <div class="mb-2 text-blue-500 font-semibold flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    STEP 1: 記憶
+                </div>
+                <p id="memory-instruction" class="text-sm text-slate-500 mb-6 font-medium bg-blue-50 py-2 px-4 rounded-full inline-block">指示</p>
+                
+                <div class="bg-slate-50 rounded-xl p-8 border-2 border-slate-200 shadow-inner mb-6">
+                    <div id="memory-content" class="text-3xl font-black text-slate-800 tracking-widest leading-normal">
+                        <!-- ここに記憶対象が表示される -->
+                    </div>
+                </div>
+                
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-blue-500 h-2 w-full origin-left"></div>
+                </div>
+                <p class="text-xs text-slate-400">数秒後に計算タスクへ移行します</p>
+            </div>
 
-showAnswerBtn.addEventListener('click', () => {
-  const ansText = currentQuestion.num + " : " + currentQuestion.word + "\n（" + currentQuestion.jp + "）\n" + currentQuestion.ipa;
-  answerDisplay.textContent = ansText;
-  showAnswerBtn.classList.add('hidden');
-  nextBtn.classList.remove('hidden');
-});
+            <!-- 3. 計算入力画面 -->
+            <div id="screen-math" class="w-full hidden fade-in">
+                <div class="mb-2 text-rose-500 font-semibold flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    STEP 2: 計算
+                </div>
+                <p class="text-sm text-slate-500 mb-6">記憶を保持したまま、計算して入力してください</p>
+                
+                <div id="math-input-container" class="space-y-4 mb-8 w-full text-left">
+                    <!-- 計算入力フォームが動的に生成される -->
+                </div>
+                
+                <button onclick="goToMemoryAnswer()" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-4 px-6 rounded-xl shadow-md transition transform active:scale-95 text-lg">
+                    次へ (記憶の解答)
+                </button>
+            </div>
 
-nextBtn.addEventListener('click', showNextQuestion);
+            <!-- 4. 記憶解答画面 -->
+            <div id="screen-memory-answer" class="w-full hidden fade-in">
+                <div class="mb-2 text-emerald-500 font-semibold flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                    STEP 3: 記憶の解答
+                </div>
+                <p id="memory-answer-instruction" class="text-sm text-slate-500 mb-6 font-medium">最初に覚えた内容を入力してください</p>
+                
+                <div class="mb-8 w-full">
+                    <!-- JSで input type を切り替えるためコンテナを用意 -->
+                    <div id="memory-input-wrapper"></div>
+                </div>
+                
+                <button onclick="showFinalResult()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl shadow-md transition transform active:scale-95 text-lg">
+                    結果を見る
+                </button>
+            </div>
 
-endBtn.addEventListener('click', () => {
-  playArea.classList.add('hidden');
-  settingsArea.classList.remove('hidden');
-  startBtn.classList.remove('hidden');
-});
-</script>
+            <!-- 5. 結果画面 -->
+            <div id="screen-answer" class="w-full hidden fade-in text-left">
+                <h3 class="text-xl font-bold text-center mb-4 text-slate-700">最終結果</h3>
+                
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 mb-4 shadow-sm">
+                    <p class="text-sm text-slate-600 font-bold mb-2 border-b pb-1">記憶タスク</p>
+                    <div id="result-memory" class="text-lg"></div>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 mb-6 shadow-sm">
+                    <p class="text-sm text-slate-600 font-bold mb-2 border-b pb-1">計算タスク</p>
+                    <div id="result-math" class="space-y-3"></div>
+                </div>
+                
+                <button onclick="resetTraining()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-6 rounded-xl shadow-md transition transform active:scale-95 text-lg">
+                    もう一度挑戦する
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const words = ["リンゴ", "クルマ", "メガネ", "カエル", "トケイ", "ハサミ", "ツクエ", "サクラ", "デンシャ", "カバン", "サイフ", "タオル", "コップ", "マド", "イス", "スマホ", "カメラ", "テレビ"];
+        
+        let currentMemoryTask = {
+            type: "", // 'forward_num', 'backward_num', 'words'
+            displayContent: "", // 画面に表示した文字列
+            correctAnswer: "", // ユーザーが入力すべき正解
+            instruction: ""
+        };
+        let currentMath = [];
+        let memoryTime = 5000; // 記憶時間は5秒に固定
+        
+        let screenHistory = [];
+        let memoryTimeout = null;
+
+        // 画面切り替えのユーティリティ関数
+        function showScreen(screenId, isBack = false) {
+            const screens = ['screen-start', 'screen-memory', 'screen-math', 'screen-memory-answer', 'screen-answer'];
+            
+            // 履歴の記録 (戻る時やスタート画面遷移時は記録しない)
+            if (!isBack && screenId !== 'screen-start') {
+                let currentActive = screens.find(id => !document.getElementById(id).classList.contains('hidden'));
+                if (currentActive) {
+                    screenHistory.push(currentActive);
+                }
+            }
+
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.remove('fade-in');
+                    void el.offsetWidth; // トリガーリフロー
+                    el.classList.add('fade-in');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            
+            // ヘッダーボタンの表示制御
+            const btnBack = document.getElementById('btn-back');
+            const btnQuit = document.getElementById('btn-quit');
+            
+            if (screenId === 'screen-start') {
+                btnBack.classList.add('hidden');
+                btnQuit.classList.add('hidden');
+                screenHistory = []; // 履歴リセット
+            } else {
+                btnBack.classList.remove('hidden');
+                btnQuit.classList.remove('hidden');
+                
+                // 結果画面では戻るボタンを隠す
+                if (screenId === 'screen-answer' || screenHistory.length === 0) {
+                    btnBack.classList.add('hidden');
+                }
+            }
+        }
+        
+        function goBack() {
+            if (screenHistory.length > 0) {
+                const prevScreen = screenHistory.pop();
+                
+                // 記憶画面に戻った場合はタイマーをリセットして再開
+                if (prevScreen === 'screen-memory') {
+                    if(memoryTimeout) clearTimeout(memoryTimeout);
+                    showScreen(prevScreen, true);
+                    startProgressBar(memoryTime);
+                    memoryTimeout = setTimeout(startMath, memoryTime);
+                } else {
+                    showScreen(prevScreen, true);
+                }
+            }
+        }
+
+        function startTraining() {
+            const memoryTypeSetting = document.getElementById("setting-memory-type").value;
+            const lengthSetting = parseInt(document.getElementById("setting-length").value);
+            
+            if (memoryTypeSetting === 'random') {
+                const types = ['forward_num', 'backward_num', 'words'];
+                currentMemoryTask.type = types[Math.floor(Math.random() * types.length)];
+            } else {
+                currentMemoryTask.type = memoryTypeSetting;
+            }
+            
+            if (currentMemoryTask.type === 'forward_num') {
+                currentMemoryTask.instruction = `次の${lengthSetting}桁の数字を順番通りに記憶`;
+                // 指定された桁数のランダムな数字を生成
+                let numStr = "";
+                for(let i=0; i<lengthSetting; i++){
+                    numStr += Math.floor(Math.random() * 10).toString();
+                }
+                currentMemoryTask.displayContent = numStr;
+                currentMemoryTask.correctAnswer = numStr; // そのまま正解
+                
+            } else if (currentMemoryTask.type === 'backward_num') {
+                currentMemoryTask.instruction = `次の${lengthSetting}桁の数字を【逆から】答えるために記憶`;
+                let numStr = "";
+                for(let i=0; i<lengthSetting; i++){
+                    numStr += Math.floor(Math.random() * 10).toString();
+                }
+                currentMemoryTask.displayContent = numStr;
+                currentMemoryTask.correctAnswer = numStr.split('').reverse().join(''); // 逆順が正解
+                
+            } else {
+                currentMemoryTask.instruction = `次の${lengthSetting}つの言葉を順番通りに記憶`;
+                let shuffled = [...words].sort(() => 0.5 - Math.random());
+                let selected = shuffled.slice(0, lengthSetting);
+                currentMemoryTask.displayContent = selected.join(" / ");
+                // 単語はスペースなしで繋げたものを正解とする（入力しやすくするため）
+                currentMemoryTask.correctAnswer = selected.join("");
+            }
+
+            document.getElementById("memory-instruction").innerText = currentMemoryTask.instruction;
+            document.getElementById("memory-content").innerText = currentMemoryTask.displayContent;
+            
+            showScreen("screen-memory");
+            startProgressBar(memoryTime);
+            
+            if(memoryTimeout) clearTimeout(memoryTimeout);
+            memoryTimeout = setTimeout(startMath, memoryTime);
+        }
+
+        function startProgressBar(duration) {
+            const bar = document.getElementById('progress-bar');
+            bar.style.transition = 'none';
+            bar.style.transform = 'scaleX(1)';
+            
+            setTimeout(() => {
+                bar.style.transition = `transform ${duration}ms linear`;
+                bar.style.transform = 'scaleX(0)';
+            }, 50);
+        }
+        
+        function generateMathQuestion(operator, digits) {
+            let a, b, q, ans;
+            const min = Math.pow(10, digits - 1);
+            const max = Math.pow(10, digits) - 1;
+            // 1桁の場合は0を含めない1~9
+            const getNum = () => digits === 1 ? Math.floor(Math.random() * 9) + 1 : Math.floor(Math.random() * (max - min + 1)) + min;
+            
+            let op = operator;
+            if (op === 'mix') {
+                const ops = ['+', '-', '*', '/'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+            }
+
+            switch (op) {
+                case '+':
+                    a = getNum(); b = getNum();
+                    q = `${a} ＋ ${b}`;
+                    ans = a + b;
+                    break;
+                case '-':
+                    a = getNum(); b = getNum();
+                    if (a < b) [a, b] = [b, a]; // マイナスにならないように
+                    q = `${a} － ${b}`;
+                    ans = a - b;
+                    break;
+                case '*':
+                    a = getNum();
+                    b = getNum();
+                    q = `${a} × ${b}`;
+                    ans = a * b;
+                    break;
+                case '/':
+                    b = getNum();
+                    let c = getNum(); // 答えとなる整数
+                    a = b * c; // 割り切れるように設定
+                    q = `${a} ÷ ${b}`;
+                    ans = c;
+                    break;
+            }
+            return { question: q, correctAnswer: ans };
+        }
+
+        function startMath() {
+            currentMath = [];
+            let mathHtml = "";
+            
+            const countSetting = parseInt(document.getElementById("setting-math-count").value);
+            const opSetting = document.getElementById("setting-math-op").value;
+            const digitsSetting = parseInt(document.getElementById("setting-math-digits").value);
+            
+            for (let i = 0; i < countSetting; i++) {
+                let mathTask = generateMathQuestion(opSetting, digitsSetting);
+                currentMath.push(mathTask);
+                
+                mathHtml += `
+                    <div class="bg-slate-50 border border-slate-300 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold text-slate-500">問${i+1}</span>
+                            <span class="text-xl font-black tracking-widest text-slate-700">${mathTask.question} = ?</span>
+                        </div>
+                        <input type="number" id="math-input-${i}" inputmode="numeric" placeholder="答えを入力" class="w-full bg-white border-2 border-slate-200 text-slate-800 py-3 px-4 rounded-lg focus:outline-none focus:border-rose-400 text-xl font-bold text-center">
+                    </div>
+                `;
+            }
+
+            document.getElementById("math-input-container").innerHTML = mathHtml;
+            showScreen("screen-math");
+            
+            // 最初の入力欄にフォーカスを当てる試み
+            setTimeout(() => {
+                const firstInput = document.getElementById('math-input-0');
+                if(firstInput) firstInput.focus();
+            }, 500);
+        }
+
+        function goToMemoryAnswer() {
+            // 計算の入力値を保存
+            for (let i = 0; i < currentMath.length; i++) {
+                let inputEl = document.getElementById(`math-input-${i}`);
+                currentMath[i].userAnswer = inputEl ? inputEl.value : "";
+            }
+
+            // 記憶問題用の入力フォームを生成
+            let wrapper = document.getElementById("memory-input-wrapper");
+            let instructionEl = document.getElementById("memory-answer-instruction");
+            
+            if (currentMemoryTask.type === 'words') {
+                instructionEl.innerText = "覚えた単語を続けて入力してください\n（例：リンゴクルマ）";
+                wrapper.innerHTML = `<input type="text" id="memory-input-final" placeholder="単語を入力" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-800 py-4 px-4 rounded-xl focus:outline-none focus:border-emerald-400 text-xl font-bold text-center shadow-inner">`;
+            } else if (currentMemoryTask.type === 'backward_num') {
+                instructionEl.innerText = "覚えた数字を【逆から】入力してください";
+                wrapper.innerHTML = `<input type="number" id="memory-input-final" inputmode="numeric" placeholder="逆から入力" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-800 py-4 px-4 rounded-xl focus:outline-none focus:border-emerald-400 text-2xl font-bold tracking-[0.2em] text-center shadow-inner">`;
+            } else {
+                instructionEl.innerText = "覚えた数字を順番通りに入力してください";
+                wrapper.innerHTML = `<input type="number" id="memory-input-final" inputmode="numeric" placeholder="数字を入力" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-800 py-4 px-4 rounded-xl focus:outline-none focus:border-emerald-400 text-2xl font-bold tracking-[0.2em] text-center shadow-inner">`;
+            }
+
+            showScreen("screen-memory-answer");
+        }
+
+        // 単語入力の際の揺らぎを吸収するユーティリティ（カタカナ・ひらがな変換、全角半角スペース除去など）
+        function normalizeText(text) {
+            if (!text) return "";
+            return text
+                .replace(/[\s　、，,]/g, "") // スペースや読点を除去
+                .replace(/[\u3041-\u3096]/g, function(match) {
+                    // ひらがなをカタカナに変換
+                    var chr = match.charCodeAt(0) + 0x60;
+                    return String.fromCharCode(chr);
+                });
+        }
+
+        function showFinalResult() {
+            // 記憶の入力値を取得
+            let userMemInput = document.getElementById("memory-input-final").value;
+            
+            // 判定処理
+            let isMemoryCorrect = false;
+            let displayUserMem = userMemInput;
+            let displayCorrectMem = currentMemoryTask.correctAnswer;
+
+            if (currentMemoryTask.type === 'words') {
+                // 単語の場合は正規化して比較
+                let normalizedInput = normalizeText(userMemInput);
+                let normalizedCorrect = normalizeText(currentMemoryTask.correctAnswer);
+                isMemoryCorrect = (normalizedInput === normalizedCorrect);
+            } else {
+                // 数字の場合は文字列として比較（念の為空白除去）
+                let cleanInput = String(userMemInput).replace(/\s/g, "");
+                let cleanCorrect = String(currentMemoryTask.correctAnswer);
+                isMemoryCorrect = (cleanInput === cleanCorrect);
+            }
+
+            // 記憶結果の描画
+            let memHtml = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-slate-500 mb-1">あなたの解答:</p>
+                        <p class="text-lg font-bold ${isMemoryCorrect ? 'text-emerald-600' : 'text-rose-500'}">${displayUserMem || '(未入力)'}</p>
+                    </div>
+                    <div class="text-3xl font-black ${isMemoryCorrect ? 'text-emerald-500' : 'text-rose-500'}">
+                        ${isMemoryCorrect ? '⭕️' : '❌'}
+                    </div>
+                </div>
+                ${!isMemoryCorrect ? `<p class="text-sm mt-2 text-slate-500 border-t border-slate-200 pt-2">正解: <span class="font-bold text-slate-700">${displayCorrectMem}</span></p>` : ''}
+            `;
+            document.getElementById("result-memory").innerHTML = memHtml;
+
+            // 計算結果の描画
+            let mathHtml = "";
+            currentMath.forEach((m, idx) => {
+                let isCorrect = (String(m.userAnswer) === String(m.correctAnswer));
+                mathHtml += `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <div>
+                            <p class="text-xs text-slate-500">問${idx+1}: ${m.question}</p>
+                            <p class="font-bold ${isCorrect ? 'text-emerald-600' : 'text-rose-500'}">答: ${m.userAnswer || '(未入力)'}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${!isCorrect ? `<span class="text-sm text-slate-400">正解:${m.correctAnswer}</span>` : ''}
+                            <span class="text-2xl font-black ${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '⭕️' : '❌'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById("result-math").innerHTML = mathHtml;
+
+            showScreen("screen-answer");
+        }
+
+        function resetTraining() {
+            if(memoryTimeout) clearTimeout(memoryTimeout);
+            screenHistory = [];
+            showScreen("screen-start");
+        }
+    </script>
 </body>
 </html>
