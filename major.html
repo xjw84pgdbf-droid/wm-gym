@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>メジャーシステム記憶訓練</title>
+<title>総合記憶・WM訓練</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -32,8 +32,26 @@
   .app-title {
     font-size: 22px;
     font-weight: bold;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     color: #007bff;
+  }
+  .status-area {
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid #bce0ef;
+  }
+  .status-rank {
+    font-size: 22px;
+    font-weight: bold;
+    color: #0056b3;
+    margin-bottom: 5px;
+  }
+  .status-xp {
+    font-size: 16px;
+    font-weight: bold;
+    color: #28a745;
   }
   .settings {
     margin-bottom: 25px;
@@ -102,6 +120,10 @@
   }
   .answer-box .ans-jp {
     color: #555;
+    font-size: 16px;
+  }
+  .answer-box .ans-ipa {
+    color: #777;
     font-size: 16px;
   }
   button {
@@ -195,6 +217,12 @@
 <div class="container">
   <div class="app-title">総合記憶・WM訓練</div>
   
+  <div class="status-area" id="statusArea">
+    <div style="font-size: 14px; color: #555; margin-bottom: 5px;">現在の称号</div>
+    <div class="status-rank" id="statusRank">見習い記憶術師</div>
+    <div class="status-xp">累計 <span id="statusXp">0</span> XP</div>
+  </div>
+
   <div id="mainMenu">
     <button id="gotoBasicBtn">基礎訓練（1単語の反復）</button>
     <button id="gotoAdvBtn" style="background-color: #fd7e14;">応用訓練（複数桁の変換）</button>
@@ -216,7 +244,7 @@
     <button id="basicShowAnswerBtn">答えを見る</button>
     <div id="basicJudgeBtns" class="judge-btns hidden">
       <button id="basicWrongBtn" class="btn-wrong">間違えた<br><span style="font-size:14px; font-weight:normal;">(すぐ復習)</span></button>
-      <button id="basicCorrectBtn" class="btn-correct">正解した<br><span style="font-size:14px; font-weight:normal;">(間隔を空ける)</span></button>
+      <button id="basicCorrectBtn" class="btn-correct">正解した<br><span style="font-size:14px; font-weight:normal;">(間隔を空ける / +1 XP)</span></button>
     </div>
     <button class="btn-secondary endBasicBtn" style="margin-top: 30px;">終了して戻る</button>
   </div>
@@ -261,7 +289,7 @@
 
   <div id="advResultArea" class="hidden">
     <h3 style="margin-top: 0; color: #fd7e14;">応用訓練 結果</h3>
-    <div id="advResultText" style="font-size: 24px; font-weight: bold; margin: 20px 0;"></div>
+    <div id="advResultText" style="font-size: 20px; font-weight: bold; margin: 20px 0; line-height: 1.5;"></div>
     <div class="history-box" id="advHistoryBox"></div>
     <button class="btn-secondary backToMenuBtn" style="margin-top: 20px;">メニューへ戻る</button>
   </div>
@@ -322,7 +350,6 @@
 </div>
 
 <script>
-// データ定義
 const rawData = `00:sauce（ソース）/sɔːs/
 01:suit（スーツ）/suːt/
 02:sun（太陽）/sʌn/
@@ -442,6 +469,55 @@ const dataList = rawData.trim().split('\n').map(line => {
   return null;
 }).filter(item => item !== null);
 
+// 称号・XPシステム
+const ranks = [
+  { min: 0, name: '見習い記憶術師' },
+  { min: 50, name: '駆け出しメモライザー' },
+  { min: 150, name: '一人前の記憶術師' },
+  { min: 300, name: '熟練のメモライザー' },
+  { min: 500, name: '記憶の達人' },
+  { min: 1000, name: '記憶の達人 II' },
+  { min: 2000, name: 'メジャーマスター' },
+  { min: 5000, name: '記憶神' },
+  { min: 10000, name: '殿堂入りメモライザー' }
+];
+
+function getProfile() {
+  return JSON.parse(localStorage.getItem('majorSysProfile')) || { xp: 0 };
+}
+
+function saveProfile(profile) {
+  localStorage.setItem('majorSysProfile', JSON.stringify(profile));
+}
+
+function getRank(xp) {
+  let currentRank = ranks[0].name;
+  for (let i = 0; i < ranks.length; i++) {
+    if (xp >= ranks[i].min) {
+      currentRank = ranks[i].name;
+    } else {
+      break;
+    }
+  }
+  return currentRank;
+}
+
+function updateStatusDisplay() {
+  const profile = getProfile();
+  document.getElementById('statusRank').textContent = getRank(profile.xp);
+  document.getElementById('statusXp').textContent = profile.xp;
+}
+
+function addXp(amount) {
+  const profile = getProfile();
+  profile.xp += amount;
+  saveProfile(profile);
+  updateStatusDisplay();
+}
+
+// 起動時にステータス更新
+updateStatusDisplay();
+
 // 画面遷移管理
 const views = {
   mainMenu: document.getElementById('mainMenu'),
@@ -515,6 +591,7 @@ function showNextBasicQuestion() {
 function handleBasicAnswer(isCorrect) {
   if (isCorrect) {
     basicQuestion.interval = basicQuestion.interval === 0 ? 20 : basicQuestion.interval * 2;
+    addXp(1);
   } else {
     basicQuestion.interval = 3;
   }
@@ -533,7 +610,7 @@ document.getElementById('startBasicBtn').addEventListener('click', () => {
 });
 
 document.getElementById('basicShowAnswerBtn').addEventListener('click', () => {
-  const ansHtml = '<div class="ans-item"><span class="ans-main">' + basicQuestion.num + " : " + basicQuestion.word + '</span><br><span class="ans-jp">（' + basicQuestion.jp + '）</span></div>';
+  const ansHtml = '<div class="ans-item"><span class="ans-main">' + basicQuestion.num + " : " + basicQuestion.word + '</span><br><span class="ans-jp">（' + basicQuestion.jp + '） </span><span class="ans-ipa">' + basicQuestion.ipa + '</span></div>';
   document.getElementById('basicAnswerDisplay').innerHTML = ansHtml;
   document.getElementById('basicShowAnswerBtn').classList.add('hidden');
   document.getElementById('basicJudgeBtns').classList.remove('hidden');
@@ -571,7 +648,10 @@ function startAdvQuestion() {
 
 function endAdvTraining() {
   const wrongCount = advTotalQuestions - advCorrectCount;
-  document.getElementById('advResultText').innerHTML = advTotalQuestions + "問中 <span style='color:#2ecc71'>" + advCorrectCount + "問正解</span><br><span style='font-size:18px; color:#e74c3c'>(" + wrongCount + "問間違い)</span>";
+  const xpEarned = advCorrectCount * advDigits;
+  if (xpEarned > 0) addXp(xpEarned);
+  
+  document.getElementById('advResultText').innerHTML = advTotalQuestions + "問中 <span style='color:#2ecc71'>" + advCorrectCount + "問正解</span><br><span style='font-size:16px; color:#e74c3c'>(" + wrongCount + "問間違い)</span><br><br><span style='font-size:20px; color:#007bff;'>+" + xpEarned + " XP 獲得！</span>";
   saveAdvHistory(advDigits, advTotalQuestions, advCorrectCount);
   renderAdvHistory();
   showView('advResult');
@@ -598,7 +678,7 @@ document.getElementById('advShowAnswerBtn').addEventListener('click', () => {
   const chunks = paddedStr.match(/.{1,2}/g);
   chunks.forEach(chunk => {
     const item = dataMap[chunk];
-    ansHtml += '<div class="ans-item"><span class="ans-main">' + chunk + ' : ' + item.word + '</span><br><span class="ans-jp">（' + item.jp + '）</span></div>';
+    ansHtml += '<div class="ans-item"><span class="ans-main">' + chunk + ' : ' + item.word + '</span><br><span class="ans-jp">（' + item.jp + '） </span><span class="ans-ipa">' + item.ipa + '</span></div>';
   });
   
   document.getElementById('advAnswerDisplay').innerHTML = ansHtml;
@@ -610,18 +690,18 @@ document.getElementById('advWrongBtn').addEventListener('click', () => startAdvQ
 document.getElementById('advCorrectBtn').addEventListener('click', () => { advCorrectCount++; startAdvQuestion(); });
 
 function saveAdvHistory(digits, total, correct) {
-  let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
+  let history = JSON.parse(localStorage.getItem('advHistory')) || [];
   const now = new Date();
   const dateStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
   
   history.unshift({ date: dateStr, digits: digits, total: total, correct: correct });
   if (history.length > 20) history = history.slice(0, 20);
-  localStorage.setItem('majorSysHistory', JSON.stringify(history));
+  localStorage.setItem('advHistory', JSON.stringify(history));
 }
 
 function renderAdvHistory() {
   const box = document.getElementById('advHistoryBox');
-  let history = JSON.parse(localStorage.getItem('majorSysHistory')) || [];
+  let history = JSON.parse(localStorage.getItem('advHistory')) || [];
   if (history.length === 0) {
     box.innerHTML = "過去の記録はまだありません。";
     return;
@@ -667,7 +747,7 @@ function generateMathQuestion() {
     return;
   }
   
-  document.getElementById('wmMathProgress').textContent = `計算問題: ${wmMathCount} / ${wmMathTotal}`;
+  document.getElementById('wmMathProgress').textContent = "計算問題: " + wmMathCount + " / " + wmMathTotal;
   
   const isPlus = Math.random() > 0.5;
   let a, b;
@@ -675,18 +755,17 @@ function generateMathQuestion() {
     a = Math.floor(Math.random() * 9) + 1;
     b = Math.floor(Math.random() * 9) + 1;
     wmCurrentMathAnswer = a + b;
-    document.getElementById('wmMathQuestionDisplay').textContent = `${a} + ${b} = ?`;
+    document.getElementById('wmMathQuestionDisplay').textContent = a + " + " + b + " = ?";
   } else {
     wmCurrentMathAnswer = Math.floor(Math.random() * 9) + 1;
     b = Math.floor(Math.random() * 9) + 1;
     a = wmCurrentMathAnswer + b; 
-    document.getElementById('wmMathQuestionDisplay').textContent = `${a} - ${b} = ?`;
+    document.getElementById('wmMathQuestionDisplay').textContent = a + " - " + b + " = ?";
   }
   
   const input = document.getElementById('wmMathInput');
   input.value = '';
   input.style.borderColor = '#ccc';
-  // スマホでフォーカスを促す
   setTimeout(() => input.focus(), 100);
 }
 
@@ -706,9 +785,11 @@ document.getElementById('wmRecallSubmitBtn').addEventListener('click', () => {
   
   const resText = document.getElementById('wmResultText');
   if (isCorrect) {
-    resText.innerHTML = `<span style="color:#2ecc71; font-size:28px;">大正解！</span><br><br>覚えた数字: ${wmTargetStr}`;
+    const xpEarned = wmDigits * 5;
+    addXp(xpEarned);
+    resText.innerHTML = "<span style='color:#2ecc71; font-size:28px;'>大正解！</span><br><br>覚えた数字: " + wmTargetStr + "<br><br><span style='font-size:20px; color:#007bff;'>+" + xpEarned + " XP 獲得！</span>";
   } else {
-    resText.innerHTML = `<span style="color:#e74c3c; font-size:28px;">残念...</span><br><br>正解: ${wmTargetStr}<br>入力: ${inputVal}`;
+    resText.innerHTML = "<span style='color:#e74c3c; font-size:28px;'>残念...</span><br><br>正解: " + wmTargetStr + "<br>入力: " + inputVal;
   }
   
   saveWmHistory(wmDigits, isCorrect);
