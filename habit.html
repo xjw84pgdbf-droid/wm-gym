@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>習慣化チェックリスト</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 15px;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .rank-display {
+    font-size: 1.2em;
+    color: #2c3e50;
+    margin-bottom: 5px;
+  }
+  .date-display {
+    font-size: 1em;
+    color: #7f8c8d;
+  }
+  .habit-list {
+    margin-bottom: 30px;
+  }
+  .habit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+  }
+  .habit-info {
+    flex-grow: 1;
+    padding-right: 15px;
+  }
+  .habit-name {
+    font-size: 1.1em;
+    margin-bottom: 4px;
+  }
+  .habit-step {
+    font-size: 0.85em;
+    color: #16a085;
+  }
+  .habit-stats {
+    font-size: 0.8em;
+    color: #95a5a6;
+  }
+  input[type="checkbox"] {
+    width: 25px;
+    height: 25px;
+    accent-color: #27ae60;
+  }
+  .chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+  }
+  .message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9em;
+    color: #8e44ad;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="rank-display" id="rankDisplay">現在のランク: 読込中...</div>
+    <div class="date-display" id="dateDisplay"></div>
+  </div>
+
+  <div class="habit-list" id="habitList">
+    </div>
+
+  <div class="chart-container">
+    <canvas id="progressChart"></canvas>
+  </div>
+
+  <div class="message">
+    焦らず、今日できることだけを淡々と。<br>休んでも自己嫌悪に陥らず、しなやかに再開しよう。
+  </div>
+</div>
+
+<script>
+// 習慣の定義とスモールステップ（配列のインデックスがレベルに相当）
+const habitDefinitions = {
+  meditation: {
+    name: '瞑想',
+    steps: ['1分だけ目を閉じて座る', '3分間、呼吸を観察する', '5分間（観察・慈悲・感謝）を行う', '10分間のフルセットを行う']
+  },
+  modeling: {
+    name: 'モデリング',
+    steps: ['憧れの人物のリストを眺める', '特定の1人の行動を1つだけ真似る', '状況に合わせて複数人の思考をトレースする']
+  },
+  physical: {
+    name: '身体調整',
+    steps: ['1回だけスクワットする', '3分間の軽いストレッチを行う', '筋トレとストレッチをセットでこなす']
+  },
+  journaling: {
+    name: 'ジャーナリング',
+    steps: ['ノートを開き、日付だけ書く', '今の感情を1行だけ書き出す', '出来事と感情を分けて詳細に書き出す']
+  },
+  recording: {
+    name: '記録と教訓化',
+    steps: ['今日の出来事や失敗を1つ思い出す', '失敗から学んだ反省を1つメモする', '翌日の具体的な行動計画に落とし込む']
+  },
+  reading: {
+    name: '読書',
+    steps: ['本を開く', '1ページだけ読む', 'キリの良い章の区切りまで読む', '内容を要約しながら深く読む']
+  },
+  memory: {
+    name: '記憶術',
+    steps: ['場所法のルートを1つ思い浮かべる', 'メジャーシステムで数字を1つ変換する', '日常の買い物リスト等に記憶術を活用する']
+  },
+  mental_math: {
+    name: '暗算',
+    steps: ['1桁の足し算・引き算を意識して暗算する', '2桁の計算を暗算する', '日常の買い物で合計額を予測して暗算する']
+  }
+};
+
+// 状態管理
+let appData = {
+  history: {}, // { 'YYYY-MM-DD': { meditation: true, ... } }
+  streaks: {}, // { meditation: 5, ... }
+  levels: {},  // { meditation: 0, ... }
+  totalChecks: 0
+};
+
+const todayStr = new Date().toISOString().split('T')[0];
+
+function loadData() {
+  const saved = localStorage.getItem('habitAppData');
+  if (saved) {
+    appData = JSON.parse(saved);
+  }
+  // 今日のデータが存在しなければ初期化
+  if (!appData.history[todayStr]) {
+    appData.history[todayStr] = {};
+  }
+  // 各項目の初期化
+  for (let key in habitDefinitions) {
+    if (appData.streaks[key] === undefined) appData.streaks[key] = 0;
+    if (appData.levels[key] === undefined) appData.levels[key] = 0;
+  }
+}
+
+function saveData() {
+  localStorage.setItem('habitAppData', JSON.stringify(appData));
+  updateUI();
+}
+
+function getRank(total) {
+  if (total < 10) return "10級 (見習い)";
+  if (total < 30) return "9級";
+  if (total < 50) return "8級";
+  if (total < 70) return "7級";
+  if (total < 100) return "6級";
+  if (total < 150) return "5級";
+  if (total < 200) return "4級";
+  if (total < 250) return "3級";
+  if (total < 300) return "2級";
+  if (total < 350) return "1級";
+  if (total < 450) return "初段";
+  if (total < 600) return "二段";
+  if (total < 800) return "三段";
+  if (total < 1000) return "四段";
+  return "達人";
+}
+
+function toggleHabit(key) {
+  const isChecked = appData.history[todayStr][key];
+  if (isChecked) {
+    appData.history[todayStr][key] = false;
+    appData.totalChecks = Math.max(0, appData.totalChecks - 1);
+    appData.streaks[key] = Math.max(0, appData.streaks[key] - 1);
+  } else {
+    appData.history[todayStr][key] = true;
+    appData.totalChecks++;
+    appData.streaks[key]++;
+    
+    // 3日連続達成でレベルアップ（最大レベルを超えないように制限）
+    const maxLevel = habitDefinitions[key].steps.length - 1;
+    if (appData.streaks[key] > 0 && appData.streaks[key] % 3 === 0) {
+      if (appData.levels[key] < maxLevel) {
+        appData.levels[key]++;
+      }
+    }
+  }
+  saveData();
+}
+
+function updateUI() {
+  // 日付とランクの更新
+  document.getElementById('dateDisplay').textContent = todayStr;
+  document.getElementById('rankDisplay').textContent = `現在のランク: ${getRank(appData.totalChecks)} (累計: ${appData.totalChecks}回)`;
+
+  // リストの描画
+  const listContainer = document.getElementById('habitList');
+  listContainer.innerHTML = '';
+
+  for (let key in habitDefinitions) {
+    const habit = habitDefinitions[key];
+    const level = appData.levels[key];
+    const stepText = habit.steps[level];
+    const isChecked = appData.history[todayStr][key] || false;
+    const streak = appData.streaks[key];
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'habit-item';
+    
+    itemDiv.innerHTML = `
+      <div class="habit-info">
+        <div class="habit-name">${habit.name}</div>
+        <div class="habit-step">Lv.${level + 1}: ${stepText}</div>
+        <div class="habit-stats">連続: ${streak}日</div>
+      </div>
+      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleHabit('${key}')">
+    `;
+    listContainer.appendChild(itemDiv);
+  }
+
+  updateChart();
+}
+
+let progressChart = null;
+function updateChart() {
+  const ctx = document.getElementById('progressChart').getContext('2d');
+  
+  // 過去7日間のデータを集計
+  const labels = [];
+  const dataPoints = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    labels.push(dateStr.slice(5)); // MM-DDのみ表示
+    
+    let dailyTotal = 0;
+    if (appData.history[dateStr]) {
+      dailyTotal = Object.values(appData.history[dateStr]).filter(v => v).length;
+    }
+    dataPoints.push(dailyTotal);
+  }
+
+  if (progressChart) {
+    progressChart.destroy();
+  }
+
+  progressChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '達成項目数',
+        data: dataPoints,
+        backgroundColor: '#3498db',
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: Object.keys(habitDefinitions).length,
+          ticks: { stepSize: 1 }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+// 初期実行
+loadData();
+updateUI();
+</script>
+</body>
+</html>
