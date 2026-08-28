@@ -477,4 +477,418 @@ loadData();
 updateUI();
 </script>
 </body>
+</html>    border-bottom: 1px solid #eee;
+    transition: background-color 0.3s;
+  }
+  .habit-item.checked {
+    background-color: #e8f8f5;
+  }
+  .habit-info {
+    flex-grow: 1;
+    padding-right: 15px;
+  }
+  .habit-name {
+    font-size: 1.1em;
+    margin-bottom: 4px;
+  }
+  .habit-step {
+    font-size: 0.85em;
+    color: #16a085;
+  }
+  .habit-stats {
+    font-size: 0.8em;
+    color: #95a5a6;
+  }
+  input[type="checkbox"] {
+    width: 25px;
+    height: 25px;
+    accent-color: #27ae60;
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+  .chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+  }
+  .message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9em;
+    color: #8e44ad;
+  }
+  .edit-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: #34495e;
+    color: white;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+  }
+  .modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-close {
+    float: right;
+    font-size: 1.5em;
+    cursor: pointer;
+  }
+  .edit-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  .edit-item input {
+    width: 100%;
+    margin-bottom: 5px;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+  .edit-item textarea {
+    width: 100%;
+    height: 60px;
+    padding: 5px;
+    box-sizing: border-box;
+    font-size: 0.9em;
+  }
+  .add-habit-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
+  }
+  .save-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1em;
+  }
+  .delete-btn {
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="rank-display" id="rankDisplay">現在のランク: 読込中...</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="next-rank-text" id="nextRankText"></div>
+    <div class="date-display" id="dateDisplay"></div>
+  </div>
+
+  <div class="habit-list" id="habitList"></div>
+
+  <div class="chart-container">
+    <canvas id="progressChart"></canvas>
+  </div>
+
+  <button class="edit-btn" onclick="openEditModal()">習慣とステップを編集する</button>
+
+  <div class="message">
+    今日もよく生きている。少しでも進めば大成功だ。無理せずいこう。
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeEditModal()">&times;</span>
+    <h2>習慣の編集</h2>
+    <p style="font-size:0.8em; color:#666;">ステップはカンマで区切って入力して。左から順にLv1, Lv2...となる。</p>
+    <div id="editList"></div>
+    <button class="add-habit-btn" onclick="addNewHabitForm()">+ 新しい習慣を追加</button>
+    <button class="save-btn" onclick="saveEditedHabits()">保存して反映する</button>
+  </div>
+</div>
+
+<script>
+const defaultHabits = {
+  meditation: { name: '瞑想', steps: ['1分だけ目を閉じて座る', '3分間、呼吸を観察する', '5分間（観察・慈悲・感謝）を行う', '10分間のフルセットを行う'] },
+  modeling: { name: 'モデリング', steps: ['憧れの人物のリストを眺める', '特定の1人の行動を1つだけ真似る', '状況に合わせて複数人の思考をトレースする'] },
+  physical: { name: '身体調整', steps: ['1回だけスクワットする', '3分間の軽いストレッチを行う', '筋トレとストレッチをセットでこなす'] },
+  journaling: { name: 'ジャーナリング', steps: ['ノートを開き、日付だけ書く', '今の感情を1行だけ書き出す', '出来事と感情を分けて詳細に書き出す'] },
+  recording: { name: '記録と教訓化', steps: ['今日の出来事や失敗を1つ思い出す', '失敗から学んだ反省を1つメモする', '翌日の具体的な行動計画に落とし込む'] },
+  reading: { name: '読書', steps: ['本を開く', '1ページだけ読む', 'キリの良い章の区切りまで読む', '内容を要約しながら深く読む'] },
+  memory: { name: '記憶術', steps: ['場所法のルートを1つ思い浮かべる', 'メジャーシステムで数字を1つ変換する', '日常の買い物リスト等に記憶術を活用する'] },
+  mental_math: { name: '暗算', steps: ['1桁の足し算・引き算を意識して暗算する', '2桁の計算を暗算する', '日常の買い物で合計額を予測して暗算する'] }
+};
+
+let habitDefinitions = {};
+let appData = { history: {}, streaks: {}, levels: {}, totalChecks: 0 };
+const todayStr = new Date().toISOString().split('T')[0];
+
+const ranks = [
+  { max: 10, name: "10級 (見習い)" },
+  { max: 30, name: "9級" },
+  { max: 50, name: "8級" },
+  { max: 70, name: "7級" },
+  { max: 100, name: "6級" },
+  { max: 150, name: "5級" },
+  { max: 200, name: "4級" },
+  { max: 250, name: "3級" },
+  { max: 300, name: "2級" },
+  { max: 350, name: "1級" },
+  { max: 450, name: "初段" },
+  { max: 600, name: "二段" },
+  { max: 800, name: "三段" },
+  { max: 1000, name: "四段" },
+  { max: Infinity, name: "達人" }
+];
+
+function getRankInfo(total) {
+  let prevMax = 0;
+  for (let i = 0; i < ranks.length; i++) {
+    if (total < ranks[i].max) {
+      return {
+        currentName: ranks[i].name,
+        nextName: ranks[i+1] ? ranks[i+1].name : "限界突破",
+        currentTotal: total,
+        prevThreshold: prevMax,
+        nextThreshold: ranks[i].max
+      };
+    }
+    prevMax = ranks[i].max;
+  }
+  return { currentName: "達人", nextName: "-", currentTotal: total, prevThreshold: 1000, nextThreshold: 1000 };
+}
+
+function loadData() {
+  const savedHabits = localStorage.getItem('habitDefs');
+  if (savedHabits) {
+    habitDefinitions = JSON.parse(savedHabits);
+  } else {
+    habitDefinitions = JSON.parse(JSON.stringify(defaultHabits));
+  }
+
+  const saved = localStorage.getItem('habitAppData');
+  if (saved) {
+    appData = JSON.parse(saved);
+  }
+  if (!appData.history[todayStr]) appData.history[todayStr] = {};
+  
+  for (let key in habitDefinitions) {
+    if (appData.streaks[key] === undefined) appData.streaks[key] = 0;
+    if (appData.levels[key] === undefined) appData.levels[key] = 0;
+  }
+}
+
+function saveData() {
+  localStorage.setItem('habitAppData', JSON.stringify(appData));
+  localStorage.setItem('habitDefs', JSON.stringify(habitDefinitions));
+  updateUI();
+}
+
+function toggleHabit(key) {
+  const isChecked = appData.history[todayStr][key];
+  if (isChecked) {
+    appData.history[todayStr][key] = false;
+    appData.totalChecks = Math.max(0, appData.totalChecks - 1);
+    appData.streaks[key] = Math.max(0, appData.streaks[key] - 1);
+  } else {
+    appData.history[todayStr][key] = true;
+    appData.totalChecks++;
+    appData.streaks[key]++;
+    
+    if (navigator.vibrate) {
+      navigator.vibrate([30, 50, 30]);
+    }
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#27ae60', '#2ecc71', '#f1c40f']
+    });
+    
+    const maxLevel = habitDefinitions[key].steps.length - 1;
+    if (appData.streaks[key] > 0 && appData.streaks[key] % 3 === 0) {
+      if (appData.levels[key] < maxLevel) {
+        appData.levels[key]++;
+      }
+    }
+  }
+  saveData();
+}
+
+function updateUI() {
+  document.getElementById('dateDisplay').textContent = todayStr;
+  
+  const rankInfo = getRankInfo(appData.totalChecks);
+  document.getElementById('rankDisplay').textContent = `称号: ${rankInfo.currentName}`;
+  
+  const progressPercent = rankInfo.nextThreshold === 1000 
+    ? 100 
+    : ((appData.totalChecks - rankInfo.prevThreshold) / (rankInfo.nextThreshold - rankInfo.prevThreshold)) * 100;
+    
+  document.getElementById('progressBar').style.width = progressPercent + '%';
+  
+  if (rankInfo.nextThreshold < Infinity) {
+    const remain = rankInfo.nextThreshold - appData.totalChecks;
+    document.getElementById('nextRankText').textContent = `次の「${rankInfo.nextName}」まであと ${remain} 回！`;
+  } else {
+    document.getElementById('nextRankText').textContent = `あなたは既に達人だ。`;
+  }
+
+  const listContainer = document.getElementById('habitList');
+  listContainer.innerHTML = '';
+
+  for (let key in habitDefinitions) {
+    const habit = habitDefinitions[key];
+    const level = Math.min(appData.levels[key] || 0, habit.steps.length - 1);
+    const stepText = habit.steps[level] || '未設定';
+    const isChecked = appData.history[todayStr][key] || false;
+    const streak = appData.streaks[key] || 0;
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'habit-item' + (isChecked ? ' checked' : '');
+    
+    itemDiv.innerHTML = `
+      <div class="habit-info">
+        <div class="habit-name">${habit.name}</div>
+        <div class="habit-step">Lv.${level + 1}: ${stepText}</div>
+        <div class="habit-stats">連続: ${streak}日</div>
+      </div>
+      <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleHabit('${key}')">
+    `;
+    listContainer.appendChild(itemDiv);
+  }
+
+  updateChart();
+}
+
+let progressChart = null;
+function updateChart() {
+  const ctx = document.getElementById('progressChart').getContext('2d');
+  const labels = [];
+  const dataPoints = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    labels.push(dateStr.slice(5));
+    let dailyTotal = 0;
+    if (appData.history[dateStr]) {
+      dailyTotal = Object.values(appData.history[dateStr]).filter(v => v).length;
+    }
+    dataPoints.push(dailyTotal);
+  }
+  if (progressChart) progressChart.destroy();
+  progressChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: '達成項目数', data: dataPoints, backgroundColor: '#2ecc71', borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function openEditModal() {
+  const editList = document.getElementById('editList');
+  editList.innerHTML = '';
+  for (let key in habitDefinitions) {
+    const habit = habitDefinitions[key];
+    const div = document.createElement('div');
+    div.className = 'edit-item';
+    div.innerHTML = `
+      <input type="hidden" class="edit-key" value="${key}">
+      名前: <input type="text" class="edit-name" value="${habit.name}"><br>
+      ステップ(カンマ区切り):<br>
+      <textarea class="edit-steps">${habit.steps.join(',')}</textarea><br>
+      <button class="delete-btn" onclick="this.parentElement.remove()">削除</button>
+    `;
+    editList.appendChild(div);
+  }
+  document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+function addNewHabitForm() {
+  const editList = document.getElementById('editList');
+  const newKey = 'habit_' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'edit-item';
+  div.innerHTML = `
+    <input type="hidden" class="edit-key" value="${newKey}">
+    名前: <input type="text" class="edit-name" value="新しい習慣"><br>
+    ステップ(カンマ区切り):<br>
+    <textarea class="edit-steps">Lv1の行動,Lv2の行動</textarea><br>
+    <button class="delete-btn" onclick="this.parentElement.remove()">削除</button>
+  `;
+  editList.appendChild(div);
+}
+
+function saveEditedHabits() {
+  const items = document.querySelectorAll('.edit-item');
+  const newDefs = {};
+  items.forEach(item => {
+    const key = item.querySelector('.edit-key').value;
+    const name = item.querySelector('.edit-name').value;
+    const stepsStr = item.querySelector('.edit-steps').value;
+    const steps = stepsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+    if (name && steps.length > 0) {
+      newDefs[key] = { name: name, steps: steps };
+    }
+  });
+  habitDefinitions = newDefs;
+  
+  for (let key in habitDefinitions) {
+    if (appData.streaks[key] === undefined) appData.streaks[key] = 0;
+    if (appData.levels[key] === undefined) appData.levels[key] = 0;
+  }
+  
+  saveData();
+  closeEditModal();
+}
+
+loadData();
+updateUI();
+</script>
+</body>
 </html>
