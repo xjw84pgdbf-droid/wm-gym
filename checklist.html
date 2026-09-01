@@ -152,6 +152,7 @@
   const messageEl = document.getElementById('message');
   let totalTasks = 0;
   let completedTasks = 0;
+  let lastMessage = "";
 
   tasksData.forEach(function(sectionItems) {
     const sectionEl = document.createElement('div');
@@ -182,7 +183,12 @@
     checklistContainer.appendChild(sectionEl);
   });
 
-  const messages = ["順調だ", "いいペースだ", "一つクリア", "着実に進んでいる", "その調子"];
+  const messages = [
+    "順調だ", "いいペースだ", "一つクリア", "着実に進んでいる", "その調子",
+    "素晴らしい", "良いリズムだ", "ナイス", "よし、次に行こう", "完璧だ",
+    "順調そのものだ", "いい仕事だ", "その意気だ", "サクサク進んでいる", "完了！",
+    "一歩前進", "いい動きだ", "集中できている", "着実だ", "よしよし"
+  ];
 
   function toggleTask(taskEl) {
     const isCompleted = taskEl.classList.contains('completed');
@@ -205,8 +211,14 @@
       messageEl.textContent = "全タスク完了。お疲れ様！";
       messageEl.style.color = "#e74c3c";
       triggerConfetti();
+      lastMessage = "";
     } else {
-      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      let randomMsg;
+      do {
+        randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      } while (randomMsg === lastMessage);
+      
+      lastMessage = randomMsg;
       messageEl.textContent = randomMsg;
       messageEl.style.color = "#2980b9";
     }
