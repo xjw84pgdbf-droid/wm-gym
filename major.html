@@ -53,6 +53,15 @@
     font-weight: bold;
     color: #28a745;
   }
+  .status-next {
+    font-size: 14px;
+    margin-top: 8px;
+    color: #555;
+    background: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px dashed #bce0ef;
+  }
   .settings {
     margin-bottom: 25px;
     text-align: left;
@@ -145,6 +154,15 @@
     transform: translateY(2px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
+  .btn-info {
+    background-color: #17a2b8 !important;
+    font-size: 15px !important;
+    padding: 10px !important;
+    margin-top: 12px !important;
+  }
+  .btn-info:active {
+    background-color: #138496 !important;
+  }
   .btn-secondary {
     background-color: #6c757d !important;
   }
@@ -216,20 +234,27 @@
 
 <div class="container">
   <div class="app-title">総合記憶・WM訓練</div>
-  
-  <div class="status-area" id="statusArea">
-    <div style="font-size: 14px; color: #555; margin-bottom: 5px;">現在の称号</div>
-    <div class="status-rank" id="statusRank">見習い記憶術師</div>
-    <div class="status-xp">累計 <span id="statusXp">0</span> XP</div>
-  </div>
 
   <div id="mainMenu">
+    <div class="status-area" id="statusArea">
+      <div style="font-size: 14px; color: #555; margin-bottom: 5px;">現在の称号</div>
+      <div class="status-rank" id="statusRank">見習い記憶術師</div>
+      <div class="status-xp">累計 <span id="statusXp">0</span> XP</div>
+      <div class="status-next" id="statusNext"></div>
+      <button id="showRanksBtn" class="btn-info">称号一覧を見る</button>
+    </div>
+
     <button id="gotoBasicBtn">基礎訓練（1単語の反復）</button>
     <button id="gotoAdvBtn" style="background-color: #fd7e14;">応用訓練（複数桁の変換）</button>
     <button id="gotoWmBtn" style="background-color: #28a745;">WM訓練（記憶＋計算）</button>
   </div>
 
-  <!-- 基礎訓練 -->
+  <div id="rankListArea" class="hidden">
+    <h3 style="margin-top: 0; color: #17a2b8;">称号一覧</h3>
+    <div id="rankListContainer" style="text-align: left; max-height: 55vh; overflow-y: auto; margin-bottom: 20px;"></div>
+    <button class="btn-secondary backToMenuBtn">メニューへ戻る</button>
+  </div>
+
   <div id="basicSettingsArea" class="settings hidden">
     <h3 style="margin-top: 0;">基礎訓練 設定</h3>
     <label><input type="radio" name="mode" value="numToWord" checked> 数字 から 単語</label>
@@ -249,7 +274,6 @@
     <button class="btn-secondary endBasicBtn" style="margin-top: 30px;">終了して戻る</button>
   </div>
 
-  <!-- 応用訓練 -->
   <div id="advSettingsArea" class="settings hidden">
     <h3 style="margin-top: 0; color: #fd7e14;">応用訓練 設定</h3>
     <label>出題する桁数 (3〜12桁):</label>
@@ -294,7 +318,6 @@
     <button class="btn-secondary backToMenuBtn" style="margin-top: 20px;">メニューへ戻る</button>
   </div>
 
-  <!-- WM訓練 -->
   <div id="wmSettingsArea" class="settings hidden">
     <h3 style="margin-top: 0; color: #28a745;">WM訓練 設定</h3>
     <label>記憶する桁数:</label>
@@ -469,7 +492,6 @@ const dataList = rawData.trim().split('\n').map(line => {
   return null;
 }).filter(item => item !== null);
 
-// 称号・XPシステム
 const ranks = [
   { min: 0, name: '見習い記憶術師' },
   { min: 50, name: '駆け出しメモライザー' },
@@ -490,22 +512,30 @@ function saveProfile(profile) {
   localStorage.setItem('majorSysProfile', JSON.stringify(profile));
 }
 
-function getRank(xp) {
-  let currentRank = ranks[0].name;
+function updateStatusDisplay() {
+  const profile = getProfile();
+  const xp = profile.xp;
+  let currentRankIndex = 0;
+  
   for (let i = 0; i < ranks.length; i++) {
     if (xp >= ranks[i].min) {
-      currentRank = ranks[i].name;
+      currentRankIndex = i;
     } else {
       break;
     }
   }
-  return currentRank;
-}
-
-function updateStatusDisplay() {
-  const profile = getProfile();
-  document.getElementById('statusRank').textContent = getRank(profile.xp);
-  document.getElementById('statusXp').textContent = profile.xp;
+  
+  document.getElementById('statusRank').textContent = ranks[currentRankIndex].name;
+  document.getElementById('statusXp').textContent = xp;
+  
+  const nextElem = document.getElementById('statusNext');
+  if (currentRankIndex < ranks.length - 1) {
+    const nextRank = ranks[currentRankIndex + 1];
+    const needed = nextRank.min - xp;
+    nextElem.innerHTML = "次の称号 <strong>" + nextRank.name + "</strong> まで<br>あと <strong>" + needed + " XP</strong>";
+  } else {
+    nextElem.innerHTML = "<strong>最高称号に到達済みです！</strong>";
+  }
 }
 
 function addXp(amount) {
@@ -515,12 +545,52 @@ function addXp(amount) {
   updateStatusDisplay();
 }
 
-// 起動時にステータス更新
+function renderRankList() {
+  const container = document.getElementById('rankListContainer');
+  const profile = getProfile();
+  let html = '<ul style="list-style:none; padding:0; margin:0;">';
+  
+  ranks.forEach((r, index) => {
+    let currentRankIndex = 0;
+    for (let i = 0; i < ranks.length; i++) {
+      if (profile.xp >= ranks[i].min) currentRankIndex = i;
+      else break;
+    }
+    const isCurrent = (index === currentRankIndex);
+    const isPassed = (index < currentRankIndex);
+    
+    let bgColor = '#fff';
+    let borderColor = '#ddd';
+    let opacity = '1';
+    let badge = '';
+    
+    if (isCurrent) {
+      bgColor = '#e8f4f8';
+      borderColor = '#007bff';
+      badge = '<span style="color:#007bff; font-size:12px; font-weight:bold; float:right; background:#fff; padding:2px 6px; border-radius:10px; border:1px solid #007bff;">現在</span>';
+    } else if (isPassed) {
+      bgColor = '#f8f9fa';
+      opacity = '0.7';
+      badge = '<span style="color:#28a745; font-size:12px; float:right;">達成</span>';
+    } else {
+      badge = '<span style="color:#999; font-size:12px; float:right;">未達成</span>';
+    }
+    
+    html += '<li style="background:' + bgColor + '; border: 1px solid ' + borderColor + '; opacity: ' + opacity + '; margin-bottom: 8px; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">';
+    html += '<div style="font-weight:bold; font-size:16px;">' + r.name + badge + '</div>';
+    html += '<div style="font-size:14px; color:#555; margin-top:5px;">必要XP: ' + r.min + '</div>';
+    html += '</li>';
+  });
+  
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
 updateStatusDisplay();
 
-// 画面遷移管理
 const views = {
   mainMenu: document.getElementById('mainMenu'),
+  rankList: document.getElementById('rankListArea'),
   basicSettings: document.getElementById('basicSettingsArea'),
   basicPlay: document.getElementById('basicPlayArea'),
   advSettings: document.getElementById('advSettingsArea'),
@@ -536,6 +606,9 @@ const views = {
 function showView(viewName) {
   Object.values(views).forEach(v => v.classList.add('hidden'));
   views[viewName].classList.remove('hidden');
+  if (viewName === 'mainMenu') {
+    updateStatusDisplay();
+  }
 }
 
 document.querySelectorAll('.backToMenuBtn, .endBasicBtn, .endAdvBtn, .endWmBtn').forEach(btn => {
@@ -545,6 +618,11 @@ document.querySelectorAll('.backToMenuBtn, .endBasicBtn, .endAdvBtn, .endWmBtn')
 document.getElementById('gotoBasicBtn').addEventListener('click', () => showView('basicSettings'));
 document.getElementById('gotoAdvBtn').addEventListener('click', () => showView('advSettings'));
 document.getElementById('gotoWmBtn').addEventListener('click', () => showView('wmSettings'));
+
+document.getElementById('showRanksBtn').addEventListener('click', () => {
+  renderRankList();
+  showView('rankList');
+});
 
 // --- 基礎訓練 ---
 let basicMode = '';
