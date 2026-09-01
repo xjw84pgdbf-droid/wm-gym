@@ -10,108 +10,105 @@
     background-color: #f4f7f6;
     color: #333;
     padding: 10px;
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto;
     box-sizing: border-box;
   }
-  h1 {
+  .header-title {
     text-align: center;
-    font-size: 1.2em;
-    margin: 5px 0 15px 0;
+    font-size: 16px;
+    margin: 5px 0 10px 0;
+    font-weight: bold;
     color: #2c3e50;
   }
   .progress-container {
-    background-color: #e0e0e0;
+    background-color: #ddd;
     border-radius: 6px;
-    height: 20px;
-    margin-bottom: 10px;
+    height: 18px;
+    margin-bottom: 8px;
     position: relative;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
   }
   .progress-bar {
     height: 100%;
     background-color: #4caf50;
     width: 0%;
     border-radius: 6px;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s;
   }
   .progress-text {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.85em;
+    width: 100%;
+    text-align: center;
+    top: 0;
+    font-size: 12px;
     font-weight: bold;
+    line-height: 18px;
     color: #000;
   }
   #message {
     text-align: center;
-    font-size: 0.95em;
+    font-size: 14px;
     font-weight: bold;
     color: #2980b9;
     height: 20px;
     margin-bottom: 10px;
   }
   #checklist {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .section {
     background: #fff;
-    padding: 6px;
+    border: 1px solid #ccc;
     border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    width: calc(50% - 4px);
+    box-sizing: border-box;
+    padding: 4px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
   }
   .task {
     display: flex;
     align-items: center;
-    padding: 6px 8px;
-    background-color: #fdfdfd;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 6px;
+    border-bottom: 1px dashed #eee;
     cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.15s ease;
+    font-size: 13px;
     user-select: none;
+    transition: all 0.1s;
+  }
+  .task:last-child {
+    border-bottom: none;
   }
   .task:active {
     transform: scale(0.98);
   }
   .task.completed {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
+    background-color: #e8f5e9;
+    color: #2e7d32;
     text-decoration: line-through;
-    opacity: 0.8;
   }
   .check-mark {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    margin-right: 10px;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #999;
+    border-radius: 3px;
+    margin-right: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #fff;
-    transition: all 0.2s;
   }
   .task.completed .check-mark {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: #4caf50;
+    border-color: #4caf50;
   }
   .task.completed .check-mark::after {
-    content: '';
-    width: 4px;
-    height: 8px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-    margin-bottom: 2px;
+    content: "✓";
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
   }
   .confetti {
     position: fixed;
@@ -128,7 +125,7 @@
 </head>
 <body>
 
-<h1>業務チェックリスト</h1>
+<div class="header-title">業務チェックリスト</div>
 
 <div class="progress-container">
   <div class="progress-bar" id="progress-bar"></div>
@@ -152,4 +149,91 @@
   const checklistContainer = document.getElementById('checklist');
   const progressBar = document.getElementById('progress-bar');
   const progressText = document.getElementById('progress-text');
-  const
+  const messageEl = document.getElementById('message');
+  let totalTasks = 0;
+  let completedTasks = 0;
+
+  tasksData.forEach(function(sectionItems) {
+    const sectionEl = document.createElement('div');
+    sectionEl.className = 'section';
+    
+    sectionItems.forEach(function(item) {
+      totalTasks++;
+      
+      const taskEl = document.createElement('div');
+      taskEl.className = 'task';
+      
+      const checkMark = document.createElement('div');
+      checkMark.className = 'check-mark';
+      
+      const textSpan = document.createElement('span');
+      textSpan.textContent = item;
+      
+      taskEl.appendChild(checkMark);
+      taskEl.appendChild(textSpan);
+      
+      taskEl.addEventListener('click', function() {
+        toggleTask(taskEl);
+      });
+      
+      sectionEl.appendChild(taskEl);
+    });
+    
+    checklistContainer.appendChild(sectionEl);
+  });
+
+  const messages = ["順調だ", "いいペースだ", "一つクリア", "着実に進んでいる", "その調子"];
+
+  function toggleTask(taskEl) {
+    const isCompleted = taskEl.classList.contains('completed');
+    
+    if (!isCompleted) {
+      taskEl.classList.add('completed');
+      completedTasks++;
+      showMessage();
+    } else {
+      taskEl.classList.remove('completed');
+      completedTasks--;
+      messageEl.textContent = "";
+    }
+    
+    updateProgress();
+  }
+
+  function showMessage() {
+    if (completedTasks === totalTasks) {
+      messageEl.textContent = "全タスク完了。お疲れ様！";
+      messageEl.style.color = "#e74c3c";
+      triggerConfetti();
+    } else {
+      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      messageEl.textContent = randomMsg;
+      messageEl.style.color = "#2980b9";
+    }
+  }
+
+  function updateProgress() {
+    const percentage = Math.round((completedTasks / totalTasks) * 100);
+    progressBar.style.width = percentage + '%';
+    progressText.textContent = percentage + '%';
+  }
+
+  function triggerConfetti() {
+    const colors = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#9b59b6'];
+    for (let i = 0; i < 100; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      confetti.style.animationDelay = Math.random() * 1.5 + 's';
+      document.body.appendChild(confetti);
+      
+      setTimeout(function() {
+        confetti.remove();
+      }, 5000);
+    }
+  }
+</script>
+</body>
+</html>
