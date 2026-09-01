@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>音声計算機</title>
+<title>音声計算機（改良版）</title>
 <style>
   body { font-family: sans-serif; padding: 20px; }
   #result { font-size: 2em; margin: 20px 0; color: #333; }
@@ -12,7 +12,7 @@
 </head>
 <body>
 
-音声計算機
+音声計算機（改良版）
 <br><br>
 <button id="startBtn">録音開始</button>
 <button id="stopBtn">停止</button>
@@ -59,28 +59,28 @@ if ('webkitSpeechRecognition' in window) {
 }
 
 function processText(text) {
-    // 全角数字を半角に変換
+    let originalText = text;
+
     text = text.replace(/[０-９]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
     });
 
-    // マイナス表現をマイナス記号に変換し、空白をすべて消す
+    text = text.replace(/、|。|と|て|に|たす|プラス/g, ' ');
     text = text.replace(/マイナス|まいなす|引く/g, '-');
-    text = text.replace(/\s+/g, '');
+    text = text.replace(/-\s+/g, '-');
+
+    let parts = text.split(/\s+/);
     
-    // マイナス記号を含む数字を抽出
-    let regex = /-?\d+/g;
-    let matches = text.match(regex);
-    
-    if (matches) {
-        matches.forEach(match => {
-            let num = parseInt(match, 10);
+    parts.forEach(part => {
+        let match = part.match(/-?\d+/);
+        if (match) {
+            let numStr = match[0];
+            let num = parseInt(numStr, 10);
             total += num;
-            // ログは新しいものが一番上に来るようにする
-            logDiv.innerText = '認識した数字: ' + match + ' -> 現在の合計: ' + total + '\n' + logDiv.innerText;
-        });
-        resultDiv.innerText = '合計: ' + total;
-    }
+            logDiv.innerText = '認識: [' + originalText + '] -> 計算: ' + numStr + ' -> 合計: ' + total + '\n' + logDiv.innerText;
+        }
+    });
+    resultDiv.innerText = '合計: ' + total;
 }
 </script>
 </body>
