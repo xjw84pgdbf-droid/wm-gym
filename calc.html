@@ -2,37 +2,37 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>音声計算機（さらに改良版）</title>
+<title>音声計算機（ワンボタン版）</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f9f9f9; }
-  #result { font-size: 7em; font-weight: bold; text-align: center; margin: 40px 0; color: #111; }
-  #log { background: #eee; padding: 20px; height: 400px; overflow-y: auto; border-radius: 10px; }
+  body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f9f9f9; text-align: center; }
+  #result { font-size: 8em; font-weight: bold; margin: 30px 0; color: #111; }
+  #log { background: #eee; padding: 20px; height: 400px; overflow-y: auto; border-radius: 10px; text-align: left; }
   .log-item { font-size: 2em; background: #fff; border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-  .btn-container { text-align: center; margin-bottom: 20px; }
-  button { font-size: 1.2em; padding: 12px 24px; margin: 0 10px; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; }
-  button#stopBtn { background-color: #dc3545; }
-  button#resetBtn { background-color: #6c757d; }
+  .btn-container { margin-bottom: 20px; }
+  #mainBtn { font-size: 1.5em; padding: 15px 30px; cursor: pointer; border: none; border-radius: 8px; background-color: #007bff; color: white; width: 100%; max-width: 400px; font-weight: bold; }
 </style>
 </head>
 <body>
 
-音声計算機（さらに改良版）
+音声計算機
 <br><br>
 <div class="btn-container">
-  <button id="startBtn">録音開始</button>
-  <button id="stopBtn">停止</button>
-  <button id="resetBtn">リセット</button>
+  <button id="mainBtn">🎤 新しく計算を始める</button>
 </div>
 
 <div id="result">0</div>
 
-<div>計算履歴（新しいものほど上）:</div>
+<div style="text-align: left; margin-bottom: 10px; color: #555;">計算履歴（新しいものほど上）:</div>
 <div id="log"></div>
 
 <script>
-let total = 0;
+let currentNums = [];
+let currentLogDiv = null;
+let isRecording = false;
+
 const resultDiv = document.getElementById('result');
 const logDiv = document.getElementById('log');
+const mainBtn = document.getElementById('mainBtn');
 let recognition;
 
 if ('webkitSpeechRecognition' in window) {
@@ -50,19 +50,46 @@ if ('webkitSpeechRecognition' in window) {
         }
     };
 
+    // 音声認識が途中で自動的に切断された場合の対策
+    recognition.onend = function() {
+        if (isRecording) {
+            try { recognition.start(); } catch(e) {}
+        }
+    };
+
     recognition.onerror = function(event) {
         console.error('エラー:', event.error);
     };
 
-    document.getElementById('startBtn').onclick = () => {
-        try { recognition.start(); } catch(e) {}
+    mainBtn.onclick = () => {
+        if (!isRecording) {
+            // 録音開始・リセット処理
+            currentNums = [];
+            resultDiv.innerText = '0';
+            
+            // 新しい履歴の枠を一番上に追加する
+            currentLogDiv = document.createElement('div');
+            currentLogDiv.className = 'log-item';
+            currentLogDiv.innerText = '（数字を話してください...）';
+            logDiv.insertBefore(currentLogDiv, logDiv.firstChild);
+            
+            try { recognition.start(); } catch(e) {}
+            isRecording = true;
+            mainBtn.innerText = '⏹️ 停止（計算を確定）';
+            mainBtn.style.backgroundColor = '#dc3545';
+        } else {
+            // 停止処理
+            isRecording = false; // 自動再開を止める
+            recognition.stop();
+            mainBtn.innerText = '🎤 新しく計算を始める';
+            mainBtn.style.backgroundColor = '#007bff';
+            
+            if (currentNums.length === 0) {
+                currentLogDiv.innerText = '（数字が認識されませんでした）';
+            }
+        }
     };
-    document.getElementById('stopBtn').onclick = () => recognition.stop();
-    document.getElementById('resetBtn').onclick = () => {
-        total = 0;
-        resultDiv.innerText = '0';
-        logDiv.innerHTML = '';
-    };
+
 } else {
     alert('このブラウザは音声認識に対応していない。Chromeを使ってくれ。');
 }
@@ -79,22 +106,23 @@ function processText(text) {
     text = text.replace(/-\s+/g, '-');
 
     let parts = text.split(/\s+/);
-    let nums = [];
+    let newlyFound = false;
     
-    // 数字だけを抽出して配列に入れる
+    // 数字だけを抽出して配列に追加
     parts.forEach(part => {
         let match = part.match(/-?\d+/);
         if (match) {
-            nums.push(parseInt(match[0], 10));
+            currentNums.push(parseInt(match[0], 10));
+            newlyFound = true;
         }
     });
     
-    if (nums.length > 0) {
+    // 新しい数字が追加されたら画面と履歴を更新
+    if (newlyFound && currentNums.length > 0) {
         let subtotal = 0;
         let expression = '';
         
-        // 計算式の組み立てと小計の計算
-        nums.forEach((num, index) => {
+        currentNums.forEach((num, index) => {
             subtotal += num;
             if (index === 0) {
                 expression += num;
@@ -109,17 +137,8 @@ function processText(text) {
         
         expression += ' ＝ ' + subtotal;
         
-        // 全体の総合計を更新
-        total += subtotal;
-        
-        // 大きく表示する部分を更新
-        resultDiv.innerText = total;
-        
-        // 履歴を別枠で作成して一番上に追加
-        let newLog = document.createElement('div');
-        newLog.className = 'log-item';
-        newLog.innerText = expression;
-        logDiv.insertBefore(newLog, logDiv.firstChild);
+        resultDiv.innerText = subtotal;
+        currentLogDiv.innerText = expression;
     }
 }
 </script>
