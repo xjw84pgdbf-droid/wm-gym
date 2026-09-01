@@ -2,24 +2,31 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>音声計算機（改良版）</title>
+<title>音声計算機（さらに改良版）</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; }
-  #result { font-size: 2em; margin: 20px 0; color: #333; }
-  #log { background: #eee; padding: 10px; height: 300px; overflow-y: scroll; font-size: 1.2em; white-space: pre-wrap; }
-  button { font-size: 1.2em; padding: 10px 20px; margin-right: 10px; cursor: pointer; }
+  body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; background-color: #f9f9f9; }
+  #result { font-size: 7em; font-weight: bold; text-align: center; margin: 40px 0; color: #111; }
+  #log { background: #eee; padding: 20px; height: 400px; overflow-y: auto; border-radius: 10px; }
+  .log-item { font-size: 2em; background: #fff; border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .btn-container { text-align: center; margin-bottom: 20px; }
+  button { font-size: 1.2em; padding: 12px 24px; margin: 0 10px; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; }
+  button#stopBtn { background-color: #dc3545; }
+  button#resetBtn { background-color: #6c757d; }
 </style>
 </head>
 <body>
 
-音声計算機（改良版）
+音声計算機（さらに改良版）
 <br><br>
-<button id="startBtn">録音開始</button>
-<button id="stopBtn">停止</button>
-<button id="resetBtn">リセット</button>
+<div class="btn-container">
+  <button id="startBtn">録音開始</button>
+  <button id="stopBtn">停止</button>
+  <button id="resetBtn">リセット</button>
+</div>
 
-<div id="result">合計: 0</div>
-<div>認識ログ:</div>
+<div id="result">0</div>
+
+<div>計算履歴（新しいものほど上）:</div>
 <div id="log"></div>
 
 <script>
@@ -47,40 +54,73 @@ if ('webkitSpeechRecognition' in window) {
         console.error('エラー:', event.error);
     };
 
-    document.getElementById('startBtn').onclick = () => recognition.start();
+    document.getElementById('startBtn').onclick = () => {
+        try { recognition.start(); } catch(e) {}
+    };
     document.getElementById('stopBtn').onclick = () => recognition.stop();
     document.getElementById('resetBtn').onclick = () => {
         total = 0;
-        resultDiv.innerText = '合計: 0';
-        logDiv.innerText = '';
+        resultDiv.innerText = '0';
+        logDiv.innerHTML = '';
     };
 } else {
     alert('このブラウザは音声認識に対応していない。Chromeを使ってくれ。');
 }
 
 function processText(text) {
-    let originalText = text;
-
+    // 全角数字を半角に変換
     text = text.replace(/[０-９]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
     });
 
+    // 区切り文字やマイナス記号の処理
     text = text.replace(/、|。|と|て|に|たす|プラス/g, ' ');
     text = text.replace(/マイナス|まいなす|引く/g, '-');
     text = text.replace(/-\s+/g, '-');
 
     let parts = text.split(/\s+/);
+    let nums = [];
     
+    // 数字だけを抽出して配列に入れる
     parts.forEach(part => {
         let match = part.match(/-?\d+/);
         if (match) {
-            let numStr = match[0];
-            let num = parseInt(numStr, 10);
-            total += num;
-            logDiv.innerText = '認識: [' + originalText + '] -> 計算: ' + numStr + ' -> 合計: ' + total + '\n' + logDiv.innerText;
+            nums.push(parseInt(match[0], 10));
         }
     });
-    resultDiv.innerText = '合計: ' + total;
+    
+    if (nums.length > 0) {
+        let subtotal = 0;
+        let expression = '';
+        
+        // 計算式の組み立てと小計の計算
+        nums.forEach((num, index) => {
+            subtotal += num;
+            if (index === 0) {
+                expression += num;
+            } else {
+                if (num < 0) {
+                    expression += ' － ' + Math.abs(num);
+                } else {
+                    expression += ' ＋ ' + num;
+                }
+            }
+        });
+        
+        expression += ' ＝ ' + subtotal;
+        
+        // 全体の総合計を更新
+        total += subtotal;
+        
+        // 大きく表示する部分を更新
+        resultDiv.innerText = total;
+        
+        // 履歴を別枠で作成して一番上に追加
+        let newLog = document.createElement('div');
+        newLog.className = 'log-item';
+        newLog.innerText = expression;
+        logDiv.insertBefore(newLog, logDiv.firstChild);
+    }
 }
 </script>
 </body>
