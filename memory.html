@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>記憶の宮殿管理</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background-color: #eee; }
+  .form-group { margin-bottom: 10px; }
+  input[type="text"] { width: 200px; padding: 5px; }
+  button { padding: 5px 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div>記憶の宮殿管理ツール</div>
+  <br>
+  <div class="form-group">
+    <label>場所: <input type="text" id="place"></label>
+  </div>
+  <div class="form-group">
+    <label>イメージ: <input type="text" id="image"></label>
+  </div>
+  <div class="form-group">
+    <label>内容: <input type="text" id="content"></label>
+  </div>
+  <button onclick="addData()">追加</button>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>場所</th>
+        <th>イメージ</th>
+        <th>内容</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <script>
+    let memoryData = JSON.parse(localStorage.getItem('memoryPalace')) || [];
+
+    function renderTable() {
+      const tbody = document.querySelector('#dataTable tbody');
+      tbody.innerHTML = '';
+      memoryData.forEach((data, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${data.place}</td>
+          <td>${data.image}</td>
+          <td>${data.content}</td>
+          <td><button onclick="deleteData(${index})">削除</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addData() {
+      const place = document.getElementById('place').value;
+      const image = document.getElementById('image').value;
+      const content = document.getElementById('content').value;
+
+      if (!place || !image || !content) {
+        alert('すべての項目を入力してね');
+        return;
+      }
+
+      memoryData.push({ place, image, content });
+      localStorage.setItem('memoryPalace', JSON.stringify(memoryData));
+      
+      document.getElementById('place').value = '';
+      document.getElementById('image').value = '';
+      document.getElementById('content').value = '';
+      
+      renderTable();
+    }
+
+    function deleteData(index) {
+      memoryData.splice(index, 1);
+      localStorage.setItem('memoryPalace', JSON.stringify(memoryData));
+      renderTable();
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
