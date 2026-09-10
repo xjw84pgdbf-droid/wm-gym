@@ -5,87 +5,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>記憶の宮殿管理</title>
 <style>
-  body { font-family: sans-serif; padding: 20px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; color: #333; }
+  .form-section { border: 1px solid #aaa; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #fcfcfc; }
+  .form-section-title { font-size: 1.1em; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 0; margin-bottom: 15px; }
+  .form-group { margin-bottom: 10px; display: flex; align-items: center; }
+  .form-group label { width: 150px; }
+  input[type="text"], select { width: 200px; padding: 5px; }
+  button { padding: 5px 15px; cursor: pointer; margin-left: 10px; }
+  
+  .palace-block { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f0f8ff; }
+  .palace-title { font-size: 1.2em; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #fff; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
   th { background-color: #eee; }
-  .form-group { margin-bottom: 10px; }
-  input[type="text"] { width: 200px; padding: 5px; }
-  button { padding: 5px 10px; cursor: pointer; }
+  .delete-btn { background-color: #ffcccc; border: 1px solid #ff9999; color: #cc0000; margin-left: 0; }
 </style>
 </head>
 <body>
   <div>記憶の宮殿管理ツール</div>
   <br>
-  <div class="form-group">
-    <label>場所: <input type="text" id="place"></label>
+  
+  <div class="form-section">
+    <div class="form-section-title">1. 新しい場所（枠組み）を作る</div>
+    <div class="form-group">
+      <label>場所の名前:</label>
+      <input type="text" id="newPalaceName" placeholder="例: 自分の部屋">
+      <button onclick="addPalace()">場所を作成</button>
+    </div>
   </div>
-  <div class="form-group">
-    <label>イメージ: <input type="text" id="image"></label>
-  </div>
-  <div class="form-group">
-    <label>内容: <input type="text" id="content"></label>
-  </div>
-  <button onclick="addData()">追加</button>
 
-  <table id="dataTable">
-    <thead>
-      <tr>
-        <th>場所</th>
-        <th>イメージ</th>
-        <th>内容</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
+  <div class="form-section">
+    <div class="form-section-title">2. 場所の中にスポットを追加する</div>
+    <div class="form-group">
+      <label>どの場所に追加する？:</label>
+      <select id="palaceSelect"></select>
+    </div>
+    <div class="form-group">
+      <label>スポット:</label>
+      <input type="text" id="spotName" placeholder="例: 机">
+    </div>
+    <div class="form-group">
+      <label>イメージ:</label>
+      <input type="text" id="imageName" placeholder="例: 燃えるリンゴ">
+    </div>
+    <div class="form-group">
+      <label>内容:</label>
+      <input type="text" id="contentName" placeholder="例: スーパーでリンゴを買う">
+    </div>
+    <div class="form-group">
+      <label></label>
+      <button onclick="addSpot()">スポットを追加</button>
+    </div>
+  </div>
+
+  <br>
+  <div>登録済みの記憶の宮殿</div>
+  <br>
+  <div id="palaceList"></div>
 
   <script>
-    let memoryData = JSON.parse(localStorage.getItem('memoryPalace')) || [];
+    let palaces = JSON.parse(localStorage.getItem('memoryPalacesDataV2')) || [];
 
-    function renderTable() {
-      const tbody = document.querySelector('#dataTable tbody');
-      tbody.innerHTML = '';
-      memoryData.forEach((data, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${data.place}</td>
-          <td>${data.image}</td>
-          <td>${data.content}</td>
-          <td><button onclick="deleteData(${index})">削除</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+    function save() {
+      localStorage.setItem('memoryPalacesDataV2', JSON.stringify(palaces));
+      render();
     }
 
-    function addData() {
-      const place = document.getElementById('place').value;
-      const image = document.getElementById('image').value;
-      const content = document.getElementById('content').value;
+    function addPalace() {
+      const name = document.getElementById('newPalaceName').value;
+      if (!name) {
+        alert('場所の名前を入力してね');
+        return;
+      }
+      palaces.push({ name: name, spots: [] });
+      document.getElementById('newPalaceName').value = '';
+      save();
+    }
 
-      if (!place || !image || !content) {
-        alert('すべての項目を入力してね');
+    function deletePalace(index) {
+      if (confirm('この場所と、中にあるスポットをすべて削除する？')) {
+        palaces.splice(index, 1);
+        save();
+      }
+    }
+
+    function addSpot() {
+      const pIndex = document.getElementById('palaceSelect').value;
+      const spot = document.getElementById('spotName').value;
+      const image = document.getElementById('imageName').value;
+      const content = document.getElementById('contentName').value;
+
+      if (pIndex === '') {
+        alert('場所を選んでね。まだない場合は先に場所を作ろう。');
+        return;
+      }
+      if (!spot || !image || !content) {
+        alert('スポット、イメージ、内容をすべて入力してね。');
         return;
       }
 
-      memoryData.push({ place, image, content });
-      localStorage.setItem('memoryPalace', JSON.stringify(memoryData));
+      palaces[pIndex].spots.push({ spot: spot, image: image, content: content });
       
-      document.getElementById('place').value = '';
-      document.getElementById('image').value = '';
-      document.getElementById('content').value = '';
-      
-      renderTable();
+      document.getElementById('spotName').value = '';
+      document.getElementById('imageName').value = '';
+      document.getElementById('contentName').value = '';
+      save();
     }
 
-    function deleteData(index) {
-      memoryData.splice(index, 1);
-      localStorage.setItem('memoryPalace', JSON.stringify(memoryData));
-      renderTable();
+    function deleteSpot(pIndex, sIndex) {
+      palaces[pIndex].spots.splice(sIndex, 1);
+      save();
     }
 
-    renderTable();
+    function render() {
+      const select = document.getElementById('palaceSelect');
+      select.innerHTML = '';
+      if (palaces.length === 0) {
+        select.innerHTML = '<option value="">(場所がありません)</option>';
+      } else {
+        palaces.forEach((p, i) => {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = p.name;
+          select.appendChild(opt);
+        });
+      }
+
+      const list = document.getElementById('palaceList');
+      list.innerHTML = '';
+      if (palaces.length === 0) {
+        list.innerHTML = 'まだ何も登録されていないよ。';
+        return;
+      }
+
+      palaces.forEach((p, pIndex) => {
+        let tableHTML = '';
+        if (p.spots.length === 0) {
+          tableHTML = 'まだスポットが登録されていないよ。';
+        } else {
+          let rows = p.spots.map((s, sIndex) => {
+            return `
+              <tr>
+                <td>${s.spot}</td>
+                <td>${s.image}</td>
+                <td>${s.content}</td>
+                <td><button class="delete-btn" onclick="deleteSpot(${pIndex}, ${sIndex})">削除</button></td>
+              </tr>
+            `;
+          }).join('');
+          tableHTML = `
+            <table>
+              <tr><th>スポット</th><th>イメージ</th><th>内容</th><th>操作</th></tr>
+              ${rows}
+            </table>
+          `;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'palace-block';
+        div.innerHTML = `
+          <div class="palace-title">
+            <span>${p.name}</span>
+            <button class="delete-btn" onclick="deletePalace(${pIndex})">場所を丸ごと削除</button>
+          </div>
+          ${tableHTML}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    render();
   </script>
 </body>
 </html>
